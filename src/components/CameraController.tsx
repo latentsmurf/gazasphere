@@ -44,8 +44,18 @@ export default function CameraController({ transitionSpeed = 1.2 }: CameraContro
   useFrame((state, delta) => {
     // Use configurable transition speed for memorial playback
     const baseSpeed = delta * transitionSpeed
-    // Faster transitions during continuous memorial playback
-    const lerpSpeed = isAutoPlaying ? baseSpeed * 1.5 : (focusedPerson ? baseSpeed : baseSpeed * 1.2)
+    
+    // Different speeds for different interaction types - optimized for fluidity
+    let lerpSpeed
+    if (isAutoPlaying) {
+      lerpSpeed = baseSpeed * 1.0 // Smooth, cinematic speed for memorial playback
+    } else if (focusedPerson) {
+      lerpSpeed = baseSpeed * 0.7 // Slower, more fluid speed for name focusing in free-flow
+    } else if (cameraTarget) {
+      lerpSpeed = baseSpeed * 0.5 // Even slower for any other camera movements to be very fluid
+    } else {
+      lerpSpeed = baseSpeed * 0.6 // Gentle return to default
+    }
     
     // Smooth camera position transition
     camera.position.lerp(targetPosition.current, lerpSpeed)

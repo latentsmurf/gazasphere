@@ -1,9 +1,9 @@
 'use client'
 
 /**
- * Gaza Souls Memorial Visualization - Main 3D Scene Component
+ * Gaza Memorial Visualization - Main 3D Scene Component
  *
- * This component serves as the primary interface for the Gaza Souls Memorial,
+ * This component serves as the primary interface for the Palestine Memorial,
  * a comprehensive interactive 3D visualization honoring the lives lost in Gaza
  * and the West Bank. It renders 63,872+ souls as individual particles that can
  * be explored through various visualization modes and filtering options.
@@ -32,14 +32,13 @@
  * - Real-time statistics and infrastructure damage data
  * - Statistical extrapolation for comprehensive representation
  *
- * @author Gaza Souls Memorial Project
+ * @author Palestine Memorial Project
  * @version 1.0.0
  * @since 2024
  */
 
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls, Stars, shaderMaterial } from '@react-three/drei'
-// Canvas shader removed - was causing issues
 import { useEffect, useState, useRef, useMemo } from 'react'
 
 import { Casualty, DataInfo, loadData } from '@/lib/dataLoader'
@@ -47,7 +46,6 @@ import { useStore } from '@/lib/store'
 import AudioPlayback from './AudioPlayback'
 import CameraController from './CameraController'
 import UnifiedSidebar from './UnifiedSidebar'
-import FloatingNavigation from './FloatingNavigation'
 import * as THREE from 'three'
 import { extend } from '@react-three/fiber'
 
@@ -88,11 +86,9 @@ declare module '@react-three/fiber' {
       particleSize: number
       glowIntensity: number
       shaderMode: number
-      filterTransitionTime: number
       transparent?: boolean
       blending?: THREE.Blending
       depthWrite?: boolean
-      depthTest?: boolean
       vertexColors?: boolean
     }
   }
@@ -284,8 +280,7 @@ function FloatingParticles({
   setHoveredIndex,
   onParticlePositions,
   visualSettings,
-  focusedIndex,
-  filteredData
+  focusedIndex
 }: { 
   data: Casualty[]
   onParticleClick: (person: Casualty, index: number) => void
@@ -306,37 +301,14 @@ function FloatingParticles({
     trailCount?: number
     trailColor?: string
     glowIntensity?: number
-    ambientLightIntensity?: number
-    fogDensity?: number
-    colorTemperature?: number
-    shaderMode?: number
-    showStars?: boolean
-    showCentralLight?: boolean
   }
   focusedIndex?: number | null
-  filteredData: Casualty[]
 }) {
   const pointsRef = useRef<THREE.Points>(null!)
+  const materialRef = useRef<THREE.ShaderMaterial | null>(null!)
   const trailsRef = useRef<THREE.Group>(null!)
   const { raycaster, camera, mouse, gl } = useThree()
-  const { filters, isFiltered, focusedPerson, isAutoPlaying, setCameraTarget } = useStore()
-  
-  // Mouse interaction for immediate hover detection
-  const [lastHovered, setLastHovered] = useState<number | null>(null)
-  
-  // Mouse following particles and interactive effects
-  const [mouseFollowers, setMouseFollowers] = useState<Set<number>>(new Set())
-  const mousePosition3D = useRef(new THREE.Vector3())
-  const [mouseInfluenceRadius, setMouseInfluenceRadius] = useState(8)
-  const [attractionPoints, setAttractionPoints] = useState<Array<{
-    position: THREE.Vector3
-    strength: number
-    startTime: number
-    duration: number
-  }>>([])
-  const [isMousePressed, setIsMousePressed] = useState(false)
-
-  // Simplified filtering - particles are now actually hidden when filtered out
+  const { filters, isFiltered, focusedPerson, isAutoPlaying } = useStore()
   
   // Trail system state
   const trailHistoryRef = useRef<Float32Array[]>([])
@@ -400,8 +372,6 @@ function FloatingParticles({
   useEffect(() => {
     initAudioAnalysis()
   }, [])
-
-  // No complex filter animations needed - particles are simply shown/hidden
   
   // Determine color based on active filters
   const getParticleColor = () => {
@@ -496,12 +466,8 @@ function FloatingParticles({
     }
   }, [positions, onParticlePositions])
   
-  // Filter attributes no longer needed - particles are simply shown/hidden
-  
   // Enhanced trail system with "breaking free" behavior
   const trailFrameCount = useRef(0)
-  
-  // No cleanup needed for immediate hover detection
 
   // Track which particles have trails for special physics behavior
   const trailedParticleIndices = useRef<Set<number>>(new Set())
@@ -642,16 +608,11 @@ function FloatingParticles({
   
   // Performance optimization: reduce frame rate for physics calculations
   const frameSkipCount = useRef(0)
-  const [currentTime, setCurrentTime] = useState(0)
   
-  // Advanced physics useFrame callback with flocking, trails, and dynamic sphere distortion
   useFrame((state, delta) => {
     if (pointsRef.current) {
-      // Update frame counter and time
-      frameSkipCount.current++
-      setCurrentTime(state.clock.elapsedTime)
-      
       // Skip physics calculations on some frames for better performance
+      frameSkipCount.current++
       const skipPhysics = frameSkipCount.current % 2 === 0 // Run physics every other frame
       
       const currentPositions = pointsRef.current.geometry.attributes.position.array as Float32Array
@@ -659,30 +620,22 @@ function FloatingParticles({
       // Physics settings from controls
       const gravity = visualSettings?.gravity || 0.0
       const velocityDamping = visualSettings?.velocityDamping || 0.99
+      const sphereRadius = 12
+      const sphereStrength = visualSettings?.sphereStrength || 0.1
       
-      // Dynamic sphere with breathing/expansion cycles for long-term variation
-      const time = state.clock.elapsedTime
-      const breathingCycle = Math.sin(time * 0.05) * 0.3 + 1.0 // 20-second breathing cycle
-      const expansionCycle = Math.sin(time * 0.008) * 0.5 + 1.0 // 2.6-minute expansion cycle
-      const baseSphereRadius = 12
-      const sphereRadius = baseSphereRadius * breathingCycle * expansionCycle
+      // Optimized flock behavior parameters - reduced complexity
+      const separationDistance = 1.0
+      const alignmentDistance = 2.5
+      const cohesionDistance = 3.5
+      const separationStrength = 0.003  // Further reduced
+      const alignmentStrength = 0.0005  // Further reduced  
+      const cohesionStrength = 0.0004   // Further reduced
+      const noiseStrength = 0.002       // Further reduced
       
-      const sphereStrength = (visualSettings?.sphereStrength || 0.08) * (2.0 - expansionCycle) // Weaker when expanded
-      const sphereDistortion = visualSettings?.sphereDistortion || 2.5
-      const sphereNoise = visualSettings?.sphereNoise || 0.8
-      const spherePulse = visualSettings?.spherePulse || 0.4
-      
-      // Dynamic flock behavior parameters that vary over time for swarm-like behavior
-      const timeVariation = Math.sin(time * 0.02) * 0.5 + 1.0 // 5-minute variation cycle
-      const separationDistance = 0.8 + timeVariation * 0.4 // 0.8 to 1.2
-      const alignmentDistance = 2.0 + timeVariation * 1.0 // 2.0 to 3.0
-      const cohesionDistance = 3.0 + timeVariation * 1.0 // 3.0 to 4.0
-      
-      // Vary flocking strengths to create more organic, less uniform behavior
-      const separationStrength = 0.002 + Math.sin(time * 0.03 + 1) * 0.001 // 0.001 to 0.003
-      const alignmentStrength = 0.0003 + Math.sin(time * 0.025 + 2) * 0.0002 // 0.0001 to 0.0005
-      const cohesionStrength = 0.0002 + Math.sin(time * 0.035 + 3) * 0.0002 // 0.0000 to 0.0004
-      const noiseStrength = 0.001 + Math.sin(time * 0.04 + 4) * 0.002 // -0.001 to 0.003 (can be negative for variety)
+      // Performance optimization: only calculate flocking for subset of particles
+      // Note: flockCalculationStep kept for future performance optimization
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const flockCalculationStep = Math.max(1, Math.floor(particleCount / 5000)) // Reduce flock calculations
       
       // Apply physics to each particle (skip on some frames for performance)
       if (!skipPhysics) {
@@ -698,61 +651,42 @@ function FloatingParticles({
         let vy = velocities[i3 + 1]
         let vz = velocities[i3 + 2]
         
-        // Individual particle characteristics for varied behavior
-        const particleSeed = i * 0.001 // Unique seed for each particle
-        const speedMultiplier = 0.7 + Math.sin(particleSeed * 100) * 0.6 // 0.1 to 1.3 speed variation
-        const directionBias = {
-          x: Math.sin(particleSeed * 200) * 0.02,
-          y: Math.cos(particleSeed * 150) * 0.015,
-          z: Math.sin(particleSeed * 250) * 0.02
-        }
-        
-        // Apply individual direction bias for swarm-like behavior
-        vx += directionBias.x * speedMultiplier
-        vy += directionBias.y * speedMultiplier
-        vz += directionBias.z * speedMultiplier
-        
-          // Special behavior for trailed particles and hovered particles
+          // Special behavior for trailed particles - breaking free and ascending
           const hasTrail = trailedParticleIndices.current.has(i)
         const isHovered = hoveredIndex !== null && i === hoveredIndex
-          
+
           if (hasTrail) {
-            // Trailed particles cycle through ascension and return phases
-            const time = state.clock.elapsedTime
-            const cycleTime = 120 // 2 minute cycle to prevent permanent disappearance
-            const cycleProgress = (time + i * 10) % cycleTime / cycleTime // Offset each particle's cycle
-            
-            if (cycleProgress < 0.7) {
-              // Ascension phase (70% of cycle)
-              const heavenDriftStrength = 0.03 * (1 + Math.sin(cycleProgress * Math.PI * 2) * 0.3)
-              const ascensionBoost = Math.sin(time * 0.3 + i * 0.05) * 0.015
-              vy += heavenDriftStrength * (1.2 + Math.sin(time * 0.5 + i * 0.1)) + ascensionBoost
-              
-              // Graceful spiral movement
-              const spiralRadius = 0.4 + Math.sin(time * 0.2 + i * 0.1) * 0.25
-              const spiralSpeed = time * 0.6 + i * 0.25
-              const spiralX = Math.sin(spiralSpeed) * spiralRadius * 0.015
-              const spiralZ = Math.cos(spiralSpeed) * spiralRadius * 0.015
-              
-              vx += spiralX
-              vz += spiralZ
-            } else {
-              // Return phase (30% of cycle) - gentle return to sphere
-              const returnStrength = 0.02 * (cycleProgress - 0.7) / 0.3 // Gradually increase return force
-              const centerDistance = Math.sqrt(x * x + y * y + z * z)
-              if (centerDistance > 0) {
-                vx -= (x / centerDistance) * returnStrength
-                vy -= (y / centerDistance) * returnStrength * 1.5 // Stronger downward return
-                vz -= (z / centerDistance) * returnStrength
-              }
-            }
-            
-            // Add gentle floating motion throughout cycle
-            const floatStrength = 0.008
-            vx += Math.sin(time * 1.1 + i * 0.4) * floatStrength
-            vz += Math.cos(time * 0.9 + i * 0.6) * floatStrength
+          // Debug: Log trailed particle processing (only occasionally)
+          if (i === 0 && frameSkipCount.current % 60 === 0) {
+            console.log('Processing trailed particle physics for', trailedParticleIndices.current.size, 'particles')
           }
-          
+          // Trailed particles have erratic, upward movement as if breaking free
+          const time = state.clock.elapsedTime
+
+          // Add strong upward drift force (heaven-bound)
+          const heavenDriftStrength = 0.02
+          vy += heavenDriftStrength * (1 + Math.sin(time * 0.5 + i * 0.1))
+
+          // Add erratic horizontal movement (breaking free)
+          const erraticStrength = 0.015
+          vx += Math.sin(time * 2.3 + i * 0.7) * erraticStrength
+          vz += Math.cos(time * 1.8 + i * 0.9) * erraticStrength
+
+          // Add burst escape velocity when particle is far from center
+          const distanceFromCenter = Math.sqrt(x * x + y * y + z * z)
+          if (distanceFromCenter > sphereRadius * 0.8) {
+            const escapeStrength = 0.008
+            const nx = x / distanceFromCenter
+            const ny = y / distanceFromCenter
+            const nz = z / distanceFromCenter
+
+            // Push outward and upward
+            vx += nx * escapeStrength + Math.sin(time + i) * 0.003
+            vy += ny * escapeStrength + heavenDriftStrength * 0.5
+            vz += nz * escapeStrength + Math.cos(time + i) * 0.003
+          }
+        } // Close if (hasTrail) block
+
         if (isHovered) {
           // Dampen the hovered particle's movement for stability
           vx *= 0.8
@@ -760,12 +694,16 @@ function FloatingParticles({
           vz *= 0.8
         }
         
-          // Simplified flocking behavior
+        // Flock behavior forces
         let sepX = 0, sepY = 0, sepZ = 0
-          let sepCount = 0
+        let alignX = 0, alignY = 0, alignZ = 0
+        let cohX = 0, cohY = 0, cohZ = 0
+        let sepCount = 0, alignCount = 0, cohCount = 0
+
+
         
-          // Check nearby particles (reduced for performance)
-          const sampleSize = Math.min(20, particleCount)
+        // Check nearby particles (heavily reduced for performance)
+        const sampleSize = Math.min(20, particleCount) // Reduced from 50 to 20
         const step = Math.max(1, Math.floor(particleCount / sampleSize))
         
         for (let j = 0; j < particleCount; j += step) {
@@ -777,27 +715,71 @@ function FloatingParticles({
           const dz = currentPositions[j3 + 2] - z
           const distance = Math.sqrt(dx * dx + dy * dy + dz * dz)
           
-            if (distance > 0 && distance < separationDistance) {
+          if (distance > 0) {
+            // Separation: avoid crowding neighbors
+            if (distance < separationDistance) {
               sepX -= dx / distance
               sepY -= dy / distance
               sepZ -= dz / distance
               sepCount++
             }
+            
+            // Alignment: steer towards average heading of neighbors
+            if (distance < alignmentDistance) {
+              alignX += velocities[j3]
+              alignY += velocities[j3 + 1]
+              alignZ += velocities[j3 + 2]
+              alignCount++
+            }
+            
+            // Cohesion: steer towards average position of neighbors
+            if (distance < cohesionDistance) {
+              cohX += dx
+              cohY += dy
+              cohZ += dz
+              cohCount++
+            }
           }
-          
-          // Apply separation forces
-        if (sepCount > 0) {
-            const flockReduction = isHovered ? 0.2 : 1.0
-          vx += (sepX / sepCount) * separationStrength * flockReduction
-          vy += (sepY / sepCount) * separationStrength * flockReduction
-          vz += (sepZ / sepCount) * separationStrength * flockReduction
+        }
+        
+        // Apply flock forces (reduced for hovered particle and particles near it)
+        const flockReduction = isHovered ? 0.2 : 1.0 // Reduce flock forces for hovered particle
+        
+        // Reduce flocking forces for particles with trails (more erratic behavior)
+        let effectiveSepCount = sepCount
+        let effectiveAlignCount = alignCount
+        let effectiveCohCount = cohCount
+
+        if (hasTrail) {
+          const erraticReduction = 0.3 // Reduce flock influence for more erratic behavior
+          effectiveSepCount *= erraticReduction
+          effectiveAlignCount *= erraticReduction
+          effectiveCohCount *= erraticReduction
+        }
+
+        if (effectiveSepCount > 0) {
+          vx += (sepX / effectiveSepCount) * separationStrength * flockReduction
+          vy += (sepY / effectiveSepCount) * separationStrength * flockReduction
+          vz += (sepZ / effectiveSepCount) * separationStrength * flockReduction
+        }
+
+        if (effectiveAlignCount > 0) {
+          vx += (alignX / effectiveAlignCount) * alignmentStrength * flockReduction
+          vy += (alignY / effectiveAlignCount) * alignmentStrength * flockReduction
+          vz += (alignZ / effectiveAlignCount) * alignmentStrength * flockReduction
+        }
+
+        if (effectiveCohCount > 0) {
+          vx += (cohX / effectiveCohCount) * cohesionStrength * flockReduction
+          vy += (cohY / effectiveCohCount) * cohesionStrength * flockReduction
+          vz += (cohZ / effectiveCohCount) * cohesionStrength * flockReduction
         }
         
         // Add subtle noise for organic movement
-          const noiseTime = state.clock.elapsedTime
-          vx += Math.sin(noiseTime * 0.5 + i * 0.1) * noiseStrength
-          vy += Math.cos(noiseTime * 0.3 + i * 0.2) * noiseStrength
-          vz += Math.sin(noiseTime * 0.7 + i * 0.15) * noiseStrength
+        const noiseTime = state.clock.elapsedTime
+        vx += Math.sin(noiseTime * 0.5 + i * 0.1) * noiseStrength
+        vy += Math.cos(noiseTime * 0.3 + i * 0.2) * noiseStrength
+        vz += Math.sin(noiseTime * 0.7 + i * 0.15) * noiseStrength
         
         // Force field effect: push particles away from hovered particle
         if (hoveredIndex !== null && hoveredIndex !== i) {
@@ -806,152 +788,214 @@ function FloatingParticles({
           const hoveredY = currentPositions[hoveredI3 + 1]
           const hoveredZ = currentPositions[hoveredI3 + 2]
           
+          // Calculate distance from hovered particle
           const dx = x - hoveredX
           const dy = y - hoveredY
           const dz = z - hoveredZ
           const distance = Math.sqrt(dx * dx + dy * dy + dz * dz)
           
-            const forceRadius = 4.0
-            const forceStrength = 0.15
+          // Apply repulsion force within a certain radius
+          const forceRadius = 4.0 // Larger radius of the force field
+          const forceStrength = 0.15 // Stronger repulsion force
           
           if (distance > 0 && distance < forceRadius) {
+            // Normalize direction vector
             const nx = dx / distance
             const ny = dy / distance
             const nz = dz / distance
             
+            // Calculate force strength (exponentially stronger when closer)
             const normalizedDistance = distance / forceRadius
             const forceMagnitude = forceStrength * Math.pow(1 - normalizedDistance, 2)
             
+            // Apply repulsion force
             vx += nx * forceMagnitude
             vy += ny * forceMagnitude
             vz += nz * forceMagnitude
           }
         }
         
-          // Apply gravity
+        // Sound-responsive forces during memorial playback - much gentler
+        if (isAutoPlaying) {
+          const audioLevel = getAudioLevel()
+          const soundStrength = audioLevel * 0.01 // Reduced from 0.05
+          
+          // Create ripple effects based on audio
+          const rippleFreq = time * 0.5 + audioLevel * 2 // Slower frequency
+          const rippleX = Math.sin(rippleFreq + i * 0.01) * soundStrength
+          const rippleY = Math.cos(rippleFreq * 1.3 + i * 0.02) * soundStrength
+          const rippleZ = Math.sin(rippleFreq * 0.7 + i * 0.015) * soundStrength
+          
+          vx += rippleX
+          vy += rippleY
+          vz += rippleZ
+          
+          // Special behavior for the focused particle - freeze and move very close to camera
+          if (focusedIndex !== null && i === focusedIndex) {
+            // Freeze the particle by zeroing its velocity
+            vx = 0
+            vy = 0
+            vz = 0
+            
+            // Move the particle very close to the camera for full-screen effect
+            const currentDistance = Math.sqrt(x * x + y * y + z * z)
+            const targetDistance = 2.5 // Very close to camera for full coverage
+            
+            if (currentDistance > 0) {
+              const nx = x / currentDistance
+              const ny = y / currentDistance  
+              const nz = z / currentDistance
+              
+              // Smoothly interpolate to the target position
+              const lerpSpeed = 0.05
+              const targetX = nx * targetDistance
+              const targetY = ny * targetDistance
+              const targetZ = nz * targetDistance
+              
+              // Override position directly for immediate effect
+              currentPositions[i3] = x + (targetX - x) * lerpSpeed
+              currentPositions[i3 + 1] = y + (targetY - y) * lerpSpeed
+              currentPositions[i3 + 2] = z + (targetZ - z) * lerpSpeed
+              
+              // Skip normal physics for this particle
+              continue
+            }
+          }
+          
+          // Add pulsing effect based on audio intensity
+          const pulseStrength = audioLevel * 0.005 // Reduced from 0.02
+          const distanceFromFocus = focusedIndex !== null ? 
+            Math.sqrt((x - 0) * (x - 0) + (y - 0) * (y - 0) + (z - 0) * (z - 0)) : 10
+          
+          if (distanceFromFocus < 5) {
+            // Particles near the focused soul respond more strongly
+            const proximityMultiplier = (5 - distanceFromFocus) / 5
+            vx += Math.sin(time * 1 + i * 0.1) * pulseStrength * proximityMultiplier // Slower time
+            vy += Math.cos(time * 1 + i * 0.1) * pulseStrength * proximityMultiplier
+            vz += Math.sin(time * 1 + i * 0.1) * pulseStrength * proximityMultiplier
+          }
+        }
+        
+        // Apply gravity (downward force)
         vy -= gravity * delta
         
-          // Apply dynamic sphere constraint with distortion
-          const sphereDistance = Math.sqrt(x * x + y * y + z * z)
-          if (sphereDistance > 0) {
+        // Apply sphere constraint with enhanced distortion controls for organic, irregular shapes
+        const sphereDistance = Math.sqrt(x * x + y * y + z * z)
+        if (sphereDistance > 0) {
+          // Sphere distortion parameters - now with complex multi-layer distortion
+          const sphereDistortion = visualSettings?.sphereDistortion || 1.0
+          const sphereNoise = visualSettings?.sphereNoise || 0.0
+          const spherePulse = visualSettings?.spherePulse || 0.0
+          
+          // Calculate distorted target distance with enhanced irregularity
           let targetDistance = sphereRadius * sphereDistortion
           
-            // Add complex noise-based distortion for highly organic, abstract shapes
+          // Add fractal-like distortion for more complex organic shapes
+          if (sphereDistortion > 1.0) {
+            // Fractal distortion - creates irregular, organic bulges
+            const fractalDistortion = Math.sin(x * 0.5 + y * 0.3 + z * 0.4 + noiseTime * 0.2) *
+                                    Math.sin(x * 1.1 + y * 0.8 + z * 0.9 + noiseTime * 0.3) *
+                                    (sphereDistortion - 1.0) * 0.5
+            targetDistance += fractalDistortion * sphereRadius * 0.3
+          }
+
+          // Add axis-specific stretching to break spherical symmetry
+          const axisStretchX = 1 + Math.sin(x * 0.15 + noiseTime * 0.6) * 0.1
+          const axisStretchY = 1 + Math.cos(y * 0.12 + noiseTime * 0.4) * 0.08
+          const axisStretchZ = 1 + Math.sin(z * 0.18 + noiseTime * 0.8) * 0.12
+
+          // Apply directional stretching
+          const stretchFactor = (axisStretchX + axisStretchY + axisStretchZ) / 3
+          targetDistance *= stretchFactor
+          
+          // Trailed particles can break free - allow them to go much further
+          if (hasTrail) {
+            // Allow trailed particles to break free and ascend
+            targetDistance *= 2.5 // Much larger sphere for trailed particles
+            // Add time-based expansion to simulate breaking free
+            const expansionFactor = 1 + Math.sin(state.clock.elapsedTime * 0.3 + i * 0.2) * 0.5
+            targetDistance *= expansionFactor
+          }
+          
+          // Add complex noise-based distortion for organic, irregular shapes
           if (sphereNoise > 0) {
-              // Multi-layered noise for complex organic forms
-              const noiseX1 = Math.sin(x * 0.08 + noiseTime * 0.4) * sphereNoise
-              const noiseY1 = Math.cos(y * 0.12 + noiseTime * 0.6) * sphereNoise
-              const noiseZ1 = Math.sin(z * 0.1 + noiseTime * 0.8) * sphereNoise
-              
-              // Second layer of noise for more complexity
-              const noiseX2 = Math.sin(x * 0.2 + noiseTime * 1.2 + i * 0.01) * sphereNoise * 0.5
-              const noiseY2 = Math.cos(y * 0.15 + noiseTime * 0.9 + i * 0.02) * sphereNoise * 0.5
-              const noiseZ2 = Math.sin(z * 0.18 + noiseTime * 1.1 + i * 0.015) * sphereNoise * 0.5
-              
-              // Combine noise layers for highly irregular surface
-            targetDistance += (noiseX1 + noiseY1 + noiseZ1) * 3.5 + (noiseX2 + noiseY2 + noiseZ2) * 2
+            // Primary noise layer - smooth waves
+            const noiseX = Math.sin(x * 0.1 + noiseTime * 0.5) * sphereNoise
+            const noiseY = Math.cos(y * 0.1 + noiseTime * 0.3) * sphereNoise
+            const noiseZ = Math.sin(z * 0.1 + noiseTime * 0.7) * sphereNoise
+
+            // Secondary noise layer - finer details with different frequencies
+            const detailNoiseX = Math.sin(x * 0.3 + noiseTime * 1.1) * sphereNoise * 0.5
+            const detailNoiseY = Math.cos(y * 0.3 + noiseTime * 0.9) * sphereNoise * 0.5
+            const detailNoiseZ = Math.sin(z * 0.3 + noiseTime * 1.3) * sphereNoise * 0.5
+
+            // Tertiary noise layer - very fine texture
+            const microNoiseX = Math.sin(x * 0.8 + noiseTime * 2.1) * sphereNoise * 0.2
+            const microNoiseY = Math.cos(y * 0.8 + noiseTime * 1.8) * sphereNoise * 0.2
+            const microNoiseZ = Math.sin(z * 0.8 + noiseTime * 2.4) * sphereNoise * 0.2
+
+            // Combine all noise layers with directional bias for more organic shapes
+            const totalNoise = (noiseX + noiseY + noiseZ +
+                              detailNoiseX + detailNoiseY + detailNoiseZ +
+                              microNoiseX + microNoiseY + microNoiseZ)
+
+            // Add directional distortion - make some areas bulge out more than others
+            const directionalDistortion = Math.sin(x * 0.2 + y * 0.15 + z * 0.1 + noiseTime * 0.4) * sphereNoise * 0.8
+
+            targetDistance += totalNoise * 2 + directionalDistortion
           }
           
-          // Add complex pulsing effect for living, breathing appearance
+          // Add organic pulsing effect with irregular rhythm
           if (spherePulse > 0) {
-              // Multi-frequency pulsing for organic, heart-like rhythm
-              const pulse1 = Math.sin(noiseTime * 1.8) * spherePulse
-              const pulse2 = Math.sin(noiseTime * 3.2 + i * 0.05) * spherePulse * 0.6
-              const pulse3 = Math.cos(noiseTime * 0.9 + x * 0.1) * spherePulse * 0.4
-              
-              // Combine pulses for complex breathing motion
-            targetDistance += (pulse1 + pulse2 + pulse3) * 4
+            // Primary pulse - main breathing rhythm
+            const primaryPulse = Math.sin(noiseTime * 2) * spherePulse
+
+            // Secondary pulse - irregular heartbeat-like rhythm
+            const secondaryPulse = Math.sin(noiseTime * 3.7 + Math.sin(noiseTime * 0.5)) * spherePulse * 0.3
+
+            // Micro pulses - subtle surface ripples
+            const microPulse = Math.sin(noiseTime * 7.3 + i * 0.1) * spherePulse * 0.1
+
+            // Combine pulses with some directional variation
+            const totalPulse = primaryPulse + secondaryPulse + microPulse
+            const directionalPulse = totalPulse * (1 + Math.sin(x * 0.1 + y * 0.1 + z * 0.1 + noiseTime) * 0.2)
+
+            targetDistance += directionalPulse * 3
           }
           
-            // Trailed particles can break free and ascend to heaven
-            if (hasTrail) {
-              // Much larger freedom for trailed particles
-              targetDistance *= 4.0 // Increased from 2.5
-              
-              // Add time-based expansion to simulate breaking free and ascending
-              const expansionFactor = 1 + Math.sin(noiseTime * 0.3 + i * 0.2) * 0.8
-              targetDistance *= expansionFactor
-              
-              // Allow unlimited upward movement (heaven-bound)
-              if (y > sphereRadius * 2) {
-                targetDistance = Math.max(targetDistance, Math.abs(y) * 1.5)
-              }
-            }
-            
-            const difference = targetDistance - sphereDistance
-            let constraintStrength = sphereStrength
-            if (hasTrail) {
-              constraintStrength *= 0.1 // Much weaker constraint for trailed particles (reduced from 0.3)
-            }
-            
-            const forceStrength = difference * constraintStrength
-            const constraintThreshold = hasTrail ? 3.0 : 0.1 // Much higher threshold for trailed particles
-            
-            if (Math.abs(difference) > constraintThreshold) {
-              const nx = x / sphereDistance
-              const ny = y / sphereDistance
-              const nz = z / sphereDistance
+          const difference = targetDistance - sphereDistance
+
+          // Reduce constraint strength for trailed particles
+          let constraintStrength = sphereStrength
+          if (hasTrail) {
+            constraintStrength *= 0.3 // Much weaker constraint for trailed particles
+          }
+
+          const forceStrength = difference * constraintStrength
+
+          // Only apply constraint if particle is significantly outside bounds
+          // Allow trailed particles more freedom
+          const constraintThreshold = hasTrail ? 1.5 : 0.1
+          if (Math.abs(difference) > constraintThreshold) {
+          // Normalize direction and apply force
+            const nx = x / sphereDistance
+            const ny = y / sphereDistance
+            const nz = z / sphereDistance
           
           vx += nx * forceStrength * delta
           vy += ny * forceStrength * delta
           vz += nz * forceStrength * delta
-            }
-        }
-        
-        // Mouse following behavior for selected particles
-        if (mouseFollowers.has(i)) {
-          const mouseX = mousePosition3D.current.x
-          const mouseY = mousePosition3D.current.y
-          const mouseZ = mousePosition3D.current.z
-          
-          const dx = mouseX - x
-          const dy = mouseY - y
-          const dz = mouseZ - z
-          const distance = Math.sqrt(dx * dx + dy * dy + dz * dz)
-          
-          if (distance > 0.5 && distance < mouseInfluenceRadius) {
-            // Gentle attraction to mouse with some randomness
-            const attractionStrength = 0.02 * (1 - distance / mouseInfluenceRadius)
-            const randomness = 0.005
-            
-            vx += (dx / distance) * attractionStrength + (Math.random() - 0.5) * randomness
-            vy += (dy / distance) * attractionStrength + (Math.random() - 0.5) * randomness
-            vz += (dz / distance) * attractionStrength + (Math.random() - 0.5) * randomness
           }
         }
         
-        // Attraction point effects (click-based particle attraction)
-        attractionPoints.forEach(attraction => {
-          const elapsed = Date.now() - attraction.startTime
-          if (elapsed < attraction.duration) {
-            const dx = attraction.position.x - x
-            const dy = attraction.position.y - y
-            const dz = attraction.position.z - z
-            const distance = Math.sqrt(dx * dx + dy * dy + dz * dz)
-            
-            if (distance > 0.1 && distance < 10) {
-              // Fade strength over time
-              const fadeProgress = elapsed / attraction.duration
-              const currentStrength = attraction.strength * (1 - fadeProgress * fadeProgress)
-              const forceStrength = currentStrength / (distance * distance + 1) // Inverse square law with offset
-              
-              vx += (dx / distance) * forceStrength * 0.05
-              vy += (dy / distance) * forceStrength * 0.05
-              vz += (dz / distance) * forceStrength * 0.05
-            }
-          }
-        })
-        
-        // Apply velocity damping with individual variation
-          const baseDampingFactor = hasTrail ? 0.98 : velocityDamping
-          const individualDamping = baseDampingFactor * (0.95 + Math.sin(particleSeed * 300) * 0.1) // 0.85 to 1.05 variation
-          vx *= individualDamping
-          vy *= individualDamping
-          vz *= individualDamping
-          
-          // Limit velocity for stability with individual variation
-          const baseMaxVelocity = hasTrail ? 0.3 : 0.1
-          const maxVelocity = baseMaxVelocity * speedMultiplier
+        // Apply velocity damping (less for trailed particles)
+        const dampingFactor = hasTrail ? 0.98 : velocityDamping
+        vx *= dampingFactor
+        vy *= dampingFactor
+        vz *= dampingFactor
+
+        // Limit velocity for stability - allow trailed particles to move faster
+        const maxVelocity = hasTrail ? 0.3 : 0.1 // Trailed particles can move faster
         const velocityMagnitude = Math.sqrt(vx * vx + vy * vy + vz * vz)
         if (velocityMagnitude > maxVelocity) {
           const scale = maxVelocity / velocityMagnitude
@@ -960,23 +1004,11 @@ function FloatingParticles({
           vz *= scale
         }
         
-          // Update positions with individual speed variation
-          const baseSpeedMultiplier = hasTrail ? 15 : 10
-          const finalSpeedMultiplier = baseSpeedMultiplier * speedMultiplier
-          x += vx * delta * finalSpeedMultiplier
-          y += vy * delta * finalSpeedMultiplier
-          z += vz * delta * finalSpeedMultiplier
-        
-        // Long-term stability: prevent particles from drifting too far from center
-        const maxDistance = sphereRadius * 3 // Allow particles to go 3x sphere radius
-        const currentDistance = Math.sqrt(x * x + y * y + z * z)
-        if (currentDistance > maxDistance) {
-          // Gently pull back towards center
-          const pullStrength = (currentDistance - maxDistance) / maxDistance * 0.1
-          x -= (x / currentDistance) * pullStrength
-          y -= (y / currentDistance) * pullStrength
-          z -= (z / currentDistance) * pullStrength
-        }
+        // Update positions - trailed particles move faster and more erratically
+        const speedMultiplier = hasTrail ? 15 : 10 // Trailed particles move faster
+        x += vx * delta * speedMultiplier
+        y += vy * delta * speedMultiplier
+        z += vz * delta * speedMultiplier
         
         // Store updated values
         currentPositions[i3] = x
@@ -986,156 +1018,42 @@ function FloatingParticles({
         velocities[i3] = vx
         velocities[i3 + 1] = vy
         velocities[i3 + 2] = vz
-        }
       }
       
-      // Update geometry
+      // Update geometry after all particles are processed (only if points exist)
+      if (pointsRef.current) {
       pointsRef.current.geometry.attributes.position.needsUpdate = true
-    
-      // Update mouse position for particle following
-      updateMouse3D()
-      
-      // Dynamically update mouse followers for long-term variety
-      if (Math.random() < 0.015) { // 1.5% chance per frame to update followers
-        const newFollowers = new Set<number>()
-        const baseFollowerCount = Math.floor(particleCount * 0.015) // 1.5% of particles
-        const timeVariation = Math.sin(time * 0.01) * 0.5 + 1.0 // Vary count over time
-        const numFollowers = Math.min(20, Math.floor(baseFollowerCount * timeVariation))
-        
-        // Select particles with some bias towards those near the mouse
-        for (let i = 0; i < numFollowers; i++) {
-          let randomIndex
-          if (Math.random() < 0.3) {
-            // 30% chance to select particles closer to mouse position
-            const attempts = 5
-            let bestIndex = Math.floor(Math.random() * particleCount)
-            let bestDistance = Infinity
-            
-            for (let attempt = 0; attempt < attempts; attempt++) {
-              const testIndex = Math.floor(Math.random() * particleCount)
-              const testI3 = testIndex * 3
-              const dx = currentPositions[testI3] - mousePosition3D.current.x
-              const dy = currentPositions[testI3 + 1] - mousePosition3D.current.y
-              const dz = currentPositions[testI3 + 2] - mousePosition3D.current.z
-              const distance = Math.sqrt(dx * dx + dy * dy + dz * dz)
-              
-              if (distance < bestDistance) {
-                bestDistance = distance
-                bestIndex = testIndex
-              }
-            }
-            randomIndex = bestIndex
-          } else {
-            // 70% chance for completely random selection
-            randomIndex = Math.floor(Math.random() * particleCount)
-          }
-          newFollowers.add(randomIndex)
-        }
-        
-        setMouseFollowers(newFollowers)
       }
-    
-      // Update trails if enabled
-      if (visualSettings?.particleTrails) {
-      updateTrails(
-        currentPositions, 
-          visualSettings.trailLength || 25, 
-          visualSettings.trailColor || '#e6f3ff', 
-          visualSettings.trailCount || 75
-        )
-      }
-    
-                  // Hover detection using raycasting for immediate red color feedback
-      if (!isAutoPlaying && !focusedPerson) {
-        raycaster.setFromCamera(mouse, camera)
-        const intersects = raycaster.intersectObject(pointsRef.current)
 
-        if (intersects.length > 0) {
-          const intersection = intersects[0]
-          if (intersection.index !== undefined) {
-            // Check distance threshold - only allow hover on particles within reasonable distance
-            const maxHoverDistance = 20 // Maximum distance for hover detection (increased for better responsiveness)
-            const particleDistance = intersection.distance
-            
-            if (particleDistance <= maxHoverDistance) {
-              const newCandidate = intersection.index
-            
-            // Set hover immediately for instant red color feedback
-            if (newCandidate !== lastHovered) {
-              setLastHovered(newCandidate)
-              setHoveredIndex(newCandidate)
-              
-              // Only auto-focus camera during memorial playback, not in free-flow mode
-              // In free-flow mode, just show the hover effect without camera movement
-            }
-      } else {
-              // Particle is too far - no hover
-              if (lastHovered !== null) {
-                setLastHovered(null)
-          setHoveredIndex(null)
-              }
-            }
-        }
-      } else {
-          // Clear hover immediately when not intersecting any particle
-          if (lastHovered !== null) {
-            setLastHovered(null)
-          setHoveredIndex(null)
-            // No camera reset in free-flow mode - let user control camera freely
-          }
-        }
+      // Update shader uniforms (only if material exists) - always update, not just when physics run
+    if (materialRef.current && frameSkipCount.current % 3 === 0) { // Update every 3rd frame for performance
+      // Update color based on filters
+      const currentColor = getParticleColor()
+      materialRef.current.color.setHex(parseInt(currentColor.replace('#', '0x')))
+      materialRef.current.opacity = visualSettings?.particleOpacity || 0.9
+      materialRef.current.focusedIndex = focusedIndex !== null ? focusedIndex : -1.0
+      materialRef.current.hoveredIndex = hoveredIndex !== null ? hoveredIndex : -1.0
+      materialRef.current.time = state.clock.elapsedTime
+      materialRef.current.particleSize = visualSettings?.particleSize || 0.2
+      materialRef.current.glowIntensity = visualSettings?.glowIntensity || 1.0
+        materialRef.current.shaderMode = visualSettings?.shaderMode || 0
       }
     }
   })
+
+  // Second useFrame for scene rotation
+  useFrame((state) => {
+    // Slow rotation of the entire scene (only when not auto-playing and enabled)
+    if (groupRef.current && !isAutoPlaying && visualSettings?.enableSceneRotation) {
+      groupRef.current.rotation.y = state.clock.elapsedTime * 0.05
+    }
+  })
   
-  // Mouse interaction and particle selection
-  const handleClick = (event: any) => {
-    event.stopPropagation?.()
-    
-    // Only allow particle clicks when not in auto-playback mode
+  const handleClick = (event: THREE.Event) => {
+    event.stopPropagation()
+    // Only allow clicks when not in auto-playback mode
     if (!focusedPerson && hoveredIndex !== null && hoveredIndex < data.length) {
       onParticleClick(data[hoveredIndex], hoveredIndex)
-    }
-  }
-  
-  // Mouse press handlers for attraction effects
-  const handleMouseDown = (event: any) => {
-    event.stopPropagation?.()
-    setIsMousePressed(true)
-    
-    // Create attraction point at mouse position
-    if (camera && mouse) {
-      raycaster.setFromCamera(mouse, camera)
-      const distance = 12
-      const attractionPos = new THREE.Vector3()
-      attractionPos.copy(raycaster.ray.direction).multiplyScalar(distance).add(raycaster.ray.origin)
-      
-      const newAttraction = {
-        position: attractionPos,
-        strength: 0.8,
-        startTime: Date.now(),
-        duration: 3000 // 3 seconds
-      }
-      
-      setAttractionPoints(prev => [...prev, newAttraction])
-      
-      // Remove attraction point after duration
-      setTimeout(() => {
-        setAttractionPoints(prev => prev.filter(p => p !== newAttraction))
-      }, newAttraction.duration)
-    }
-  }
-  
-  const handleMouseUp = () => {
-    setIsMousePressed(false)
-  }
-  
-  // Update mouse position in 3D space for particle following
-  const updateMouse3D = () => {
-    if (camera && mouse) {
-      raycaster.setFromCamera(mouse, camera)
-      const distance = 15 // Distance from camera
-      mousePosition3D.current.copy(raycaster.ray.direction).multiplyScalar(distance).add(raycaster.ray.origin)
     }
   }
 
@@ -1147,29 +1065,21 @@ function FloatingParticles({
       </group>
       
       {/* Main particles */}
-      <points 
-        ref={pointsRef} 
-        onClick={handleClick}
-        onPointerDown={handleMouseDown}
-        onPointerUp={handleMouseUp}
-        geometry={geometry}
-      >
+      <points ref={pointsRef} onClick={handleClick} geometry={geometry}>
         <particleMaterial
+          ref={materialRef}
           map={createDotTexture()}
           color={getParticleColor()}
           opacity={visualSettings?.particleOpacity || 0.9}
-          focusedIndex={focusedIndex ?? -1.0}
+          focusedIndex={focusedIndex !== null ? focusedIndex : -1.0}
           hoveredIndex={hoveredIndex !== null ? hoveredIndex : -1.0}
-          time={currentTime}
+          time={0.0}
           particleSize={visualSettings?.particleSize || 0.2}
           glowIntensity={visualSettings?.glowIntensity || 1.0}
           shaderMode={visualSettings?.shaderMode || 0}
-          filterTransitionTime={0.0}
-
           transparent={true}
-          blending={THREE.NormalBlending}
+          blending={THREE.AdditiveBlending}
           depthWrite={false}
-          depthTest={true}
           vertexColors={false}
         />
       </points>
@@ -1184,8 +1094,7 @@ function MemorialScene({
   setHoveredIndex,
   onParticlePositions,
   visualSettings,
-  focusedIndex,
-  filteredData
+  focusedIndex
 }: { 
   data: Casualty[]
   onParticleClick: (person: Casualty, index: number) => void
@@ -1207,11 +1116,8 @@ function MemorialScene({
     trailColor: string
     glowIntensity: number
     colorTemperature: number
-    shaderMode: number
-    // Canvas shader properties removed
   }
   focusedIndex?: number | null
-  filteredData: Casualty[]
 }) {
   const groupRef = useRef<THREE.Group>(null!)
   const { isAutoPlaying } = useStore()
@@ -1227,42 +1133,55 @@ function MemorialScene({
   
   return (
     <group ref={groupRef}>
-      {/* Simplified lighting for better particle visibility */}
-      <ambientLight intensity={0.6} color="#ffffff" />
+      {/* Dynamic atmospheric lighting */}
+      <ambientLight intensity={visualSettings?.ambientLightIntensity || 0.2} />
       
-      {/* Enhanced Atmospheric Fog with Texture */}
-      {/* Fog effects removed - they were causing visibility issues */}
+      {/* Color temperature lighting */}
+      <pointLight 
+        position={[0, 0, 0]} 
+        intensity={0.5} 
+        color={(visualSettings?.colorTemperature || 0.5) > 0.5 ? "#ffddaa" : "#aaddff"} 
+      />
+      <pointLight 
+        position={[10, 10, 10]} 
+        intensity={0.3} 
+        color={(visualSettings?.colorTemperature || 0.5) > 0.5 ? "#ffccaa" : "#ccccff"} 
+      />
+      <pointLight 
+        position={[-10, -10, -10]} 
+        intensity={0.3} 
+        color={(visualSettings?.colorTemperature || 0.5) > 0.5 ? "#ffaacc" : "#aaffcc"} 
+      />
+      
+      {/* Atmospheric fog */}
+      {(visualSettings?.fogDensity || 0) > 0 && (
+        <fog attach="fog" args={['#000000', 10, 50 / ((visualSettings?.fogDensity || 0.01) * 100)]} />
+      )}
       
       {/* Background stars */}
       {visualSettings?.showStars && (
         <Stars radius={100} depth={50} count={1000} factor={2} saturation={0} fade />
       )}
       
-      {/* Duplicate lighting system removed for better performance */}
-      
       {/* Main particle field */}
       <FloatingParticles 
-        data={filteredData} 
+        data={data} 
         onParticleClick={onParticleClick}
         hoveredIndex={hoveredIndex}
         setHoveredIndex={setHoveredIndex}
         onParticlePositions={onParticlePositions}
         visualSettings={visualSettings}
         focusedIndex={focusedIndex}
-        filteredData={filteredData}
       />
       
       
       {/* Central memorial light */}
-      {/* Central memorial light - hidden for cleaner appearance */}
-      {false && visualSettings?.showCentralLight && (
+      {visualSettings?.showCentralLight && (
         <mesh position={[0, 0, 0]}>
           <sphereGeometry args={[0.1, 16, 16]} />
           <meshBasicMaterial color="#ffffff" transparent opacity={0.5} />
         </mesh>
       )}
-      
-      {/* Canvas shader effects removed - they were not working properly */}
       
       <OrbitControls 
         enablePan={!isAutoPlaying}
@@ -1289,8 +1208,6 @@ export default function SceneCanvas() {
   const [showWestBankHistory, setShowWestBankHistory] = useState(false)
   const [infrastructureData, setInfrastructureData] = useState<any[]>([])
   const [showInfrastructureDetails, setShowInfrastructureDetails] = useState(false)
-  const [gazaDailyData, setGazaDailyData] = useState<any[]>([])
-  const [loadingStartTime, setLoadingStartTime] = useState<number>(0)
   const [selectedPerson, setSelectedPerson] = useState<Casualty | null>(null)
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
   const [particlePositions, setParticlePositions] = useState<Float32Array | null>(null)
@@ -1450,10 +1367,10 @@ export default function SceneCanvas() {
     // Physics controls
     gravity: 0.0, // Downward force (heaven-bound particles overcome gravity)
     velocityDamping: 0.99, // Velocity decay (0.99 = slight damping, 0.9 = heavy damping)
-    sphereStrength: 0.08, // Reduced force pulling particles back to sphere surface for more abstract shape
-    sphereDistortion: 2.5, // Much higher distortion - very abstract, non-spherical shape
-    sphereNoise: 0.8, // High noise-based surface distortion for organic, flowing form
-    spherePulse: 0.4, // Stronger pulsing effect for more dynamic, living appearance
+    sphereStrength: 0.1, // Force pulling particles back to sphere surface
+    sphereDistortion: 1.2, // Sphere shape distortion (1.0 = perfect sphere) - now more distorted
+    sphereNoise: 0.3, // Noise-based surface distortion - increased for more irregularity
+    spherePulse: 0.2, // Pulsing effect strength - subtle organic movement
     // Creative atmosphere controls - enhanced for heavenly ascension
     ambientLightIntensity: 0.3, // Slightly brighter for ethereal effect
     fogDensity: 0.01, // Subtle fog for depth and mystery
@@ -1462,9 +1379,8 @@ export default function SceneCanvas() {
     trailCount: 75, // Fewer trails but more impactful (each represents breaking free)
     trailColor: '#e6f3ff', // Soft blue-white for heavenly appearance
     glowIntensity: 1.0, // Enhanced glow for ethereal effect
-    colorTemperature: 0.7, // Color temperature for warm/cool effects (0 to 1 range)
-    shaderMode: 0, // 0=default, 1=ethereal, 2=cosmic, 3=aurora, 4=plasma
-    // Canvas shader effects removed for better performance
+    colorTemperature: 0.7, // Warmer color temperature for heavenly atmosphere
+    shaderMode: 0 // 0=default, 1=ethereal, 2=cosmic, 3=aurora
   })
 
   const { filters, setCameraTarget, setFocusedPerson, setFocusedParticleIndex, isAutoPlaying, focusedParticleIndex } = useStore()
@@ -1504,11 +1420,7 @@ export default function SceneCanvas() {
     const fetchData = async () => {
     setLoading(true)
     setError(null)
-    setLoadingProgress('Initializing memorial space...')
-    
-    // Record loading start time for minimum 5-second display
-    const startTime = Date.now()
-    setLoadingStartTime(startTime)
+    setLoadingProgress('Starting data fetch...')
 
       try {
         console.log('SceneCanvas: Starting data fetch...')
@@ -1519,29 +1431,15 @@ export default function SceneCanvas() {
         loadCSVFallbackData()
       }, 15000)
 
-      // First, try to load preview data quickly for display during loading
-      setLoadingProgress('Loading daily updates from Gaza, West Bank, and infrastructure...')
+      // First, try to load West Bank and Infrastructure data quickly for display during loading
+      setLoadingProgress('Loading West Bank and Infrastructure data for preview...')
       console.log('🔄 Starting preview data loading...')
 
       try {
-        const [gazaDailyResponse, westBankResponse, infrastructureResponse] = await Promise.allSettled([
-          fetch('https://data.techforpalestine.org/api/v2/casualties_daily.json'),
+        const [westBankResponse, infrastructureResponse] = await Promise.allSettled([
           fetch('https://data.techforpalestine.org/api/v2/west_bank_daily.json'),
           fetch('https://data.techforpalestine.org/api/v3/infrastructure-damaged.json')
         ])
-
-        console.log('Gaza Daily response:', gazaDailyResponse)
-        console.log('West Bank response:', westBankResponse)
-        console.log('Infrastructure response:', infrastructureResponse)
-
-        if (gazaDailyResponse.status === 'fulfilled' && gazaDailyResponse.value.ok) {
-          const gazaData = await gazaDailyResponse.value.json()
-          console.log('✅ Gaza Daily data loaded:', gazaData.length, 'records')
-          console.log('Sample Gaza Daily data:', gazaData[gazaData.length - 1])
-          setGazaDailyData(gazaData)
-        } else {
-          console.error('❌ Gaza Daily API failed:', gazaDailyResponse)
-        }
 
         console.log('West Bank response:', westBankResponse)
         console.log('Infrastructure response:', infrastructureResponse)
@@ -1575,37 +1473,15 @@ export default function SceneCanvas() {
       // Clear the fallback timeout since we succeeded
       clearTimeout(fallbackTimeout)
 
-      setLoadingProgress('Processing memorial data...')
+      setLoadingProgress('Processing data...')
         setData(dataResult.casualties)
         setDataInfo(dataResult)
         setError(null)
-      
-      // Ensure minimum 5-second loading time for users to see data sources and daily updates
-      const elapsedTime = Date.now() - startTime
-      const minimumLoadingTime = 5000 // 5 seconds
-      const remainingTime = minimumLoadingTime - elapsedTime
-      
-      if (remainingTime > 0) {
-        setLoadingProgress('Preparing memorial visualization...')
-        console.log(`⏰ Waiting ${remainingTime}ms more to meet minimum loading time`)
-        await new Promise(resolve => setTimeout(resolve, remainingTime))
-      }
-      
-      setLoadingProgress('Gaza Souls Memorial space ready')
+      setLoadingProgress('Complete!')
       } catch (err) {
         console.error('SceneCanvas: Error loading data:', err)
       setError(err instanceof Error ? err.message : 'Unknown error occurred while loading data')
-      setLoadingProgress('Failed to load data - using fallback')
-      
-      // Still enforce minimum loading time even on error
-      const elapsedTime = Date.now() - startTime
-      const minimumLoadingTime = 5000
-      const remainingTime = minimumLoadingTime - elapsedTime
-      
-      if (remainingTime > 0) {
-        console.log(`⏰ Waiting ${remainingTime}ms more even after error`)
-        await new Promise(resolve => setTimeout(resolve, remainingTime))
-      }
+      setLoadingProgress('Failed to load data')
       } finally {
         console.log('SceneCanvas: Setting loading to false')
         setLoading(false)
@@ -1780,55 +1656,35 @@ export default function SceneCanvas() {
       
       // During memorial playback, position camera to frame the particle properly
       if (isAutoPlaying) {
-        // Calculate direction from origin to particle for better framing
+        // Calculate direction from origin to particle
         const particleDistance = Math.sqrt(x * x + y * y + z * z)
         const nx = particleDistance > 0 ? x / particleDistance : 0
         const ny = particleDistance > 0 ? y / particleDistance : 0
         const nz = particleDistance > 0 ? z / particleDistance : 1
         
-        // Enhanced camera positioning for optimal framing of red particle above name tag
-        const cameraDistance = 6 // Closer for more intimate framing
-        
-        // Add slight offset to camera position for better angle
-        const offsetAngle = Math.PI * 0.15 // 27 degrees offset for better viewing angle
-        const cameraOffsetX = Math.cos(offsetAngle) * nx - Math.sin(offsetAngle) * nz
-        const cameraOffsetZ = Math.sin(offsetAngle) * nx + Math.cos(offsetAngle) * nz
-        
+        // Position camera along the same direction but at a safe distance
+        // Since the particle will move to 2.5 units from origin, camera should be further back
+        const cameraDistance = 8 // Camera distance from origin
         const cameraPos: [number, number, number] = [
-          cameraOffsetX * cameraDistance, 
-          (ny * cameraDistance) + 1.5, // Slightly elevated for better particle framing
-          cameraOffsetZ * cameraDistance
+          nx * cameraDistance, 
+          ny * cameraDistance, 
+          nz * cameraDistance
         ]
         
-        // Look at point positioned to show red particle in upper portion of frame
-        // This ensures the particle appears above where the name tag will be displayed
-        const targetDistance = 2.5 // Where the particle will be positioned
+        // Look at a point slightly below the particle's target position to show particle above center
+        const targetDistance = 2.5 // Where the particle will be
         const lookAt: [number, number, number] = [
           nx * targetDistance, 
-          ny * targetDistance - 2.0, // Look significantly lower to frame particle in upper third
+          ny * targetDistance - 1.0, // Look lower to show particle higher in frame
           nz * targetDistance
         ]
         
         setCameraTarget({ position: cameraPos, lookAt })
       } else {
-        // Free-flow mode - smooth approach to particle without jarring movements
-        // Use a more gradual approach that doesn't require current camera position
-        const particlePos = new THREE.Vector3(x, y, z)
-        
-        // Calculate a smooth approach using particle's position relative to center
-        const particleDistance = Math.sqrt(x * x + y * y + z * z)
-        const optimalDistance = 4 // Comfortable viewing distance
-        
-        // Position camera at a good angle relative to the particle
-        const cameraOffset = particleDistance > 0 ? optimalDistance / particleDistance : 1
-        const cameraPos: [number, number, number] = [
-          x * (1 + cameraOffset),
-          y * (1 + cameraOffset) + 1, // Slightly above for better view
-          z * (1 + cameraOffset)
-        ]
-        
-        // Look at the particle with slight offset for name display
-        const lookAt: [number, number, number] = [x, y - 0.3, z]
+        // Normal click behavior - zoom in close to current particle position
+        const distance = 3
+        const cameraPos: [number, number, number] = [x + distance, y + distance, z + distance]
+        const lookAt: [number, number, number] = [x, y, z]
         setCameraTarget({ position: cameraPos, lookAt })
       }
       
@@ -1855,142 +1711,79 @@ export default function SceneCanvas() {
 
   if (loading) {
     return (
-      <div className="w-full h-screen bg-black flex items-center justify-center overflow-hidden relative">
-        {/* Subtle particle field background - matching WebGL aesthetic */}
+      <div className="w-full h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center overflow-hidden">
+        {/* Animated background particles */}
         <div className="absolute inset-0 overflow-hidden">
-          {/* Scattered memorial particles */}
-          <div className="absolute top-[15%] left-[20%] w-1 h-1 bg-white/40 rounded-full animate-pulse"></div>
-          <div className="absolute top-[25%] right-[30%] w-0.5 h-0.5 bg-white/30 rounded-full animate-pulse" style={{animationDelay: '0.5s'}}></div>
-          <div className="absolute top-[45%] left-[15%] w-0.5 h-0.5 bg-white/20 rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
-          <div className="absolute top-[65%] right-[25%] w-1 h-1 bg-white/35 rounded-full animate-pulse" style={{animationDelay: '1.5s'}}></div>
-          <div className="absolute top-[80%] left-[40%] w-0.5 h-0.5 bg-white/25 rounded-full animate-pulse" style={{animationDelay: '2s'}}></div>
-          <div className="absolute top-[35%] right-[15%] w-0.5 h-0.5 bg-white/30 rounded-full animate-pulse" style={{animationDelay: '2.5s'}}></div>
-          <div className="absolute top-[55%] left-[70%] w-1 h-1 bg-white/40 rounded-full animate-pulse" style={{animationDelay: '3s'}}></div>
-          <div className="absolute top-[75%] right-[60%] w-0.5 h-0.5 bg-white/20 rounded-full animate-pulse" style={{animationDelay: '3.5s'}}></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.05)_0%,transparent_50%)] animate-pulse"></div>
+          <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-blue-400 rounded-full animate-ping opacity-75"></div>
+          <div className="absolute top-3/4 right-1/4 w-1 h-1 bg-green-400 rounded-full animate-ping opacity-60 animation-delay-300"></div>
+          <div className="absolute top-1/2 left-3/4 w-1.5 h-1.5 bg-purple-400 rounded-full animate-ping opacity-70 animation-delay-700"></div>
         </div>
 
         <div className="relative z-10 text-center text-white max-w-6xl mx-auto p-8">
-          {/* Main Loading Animation - matching memorial aesthetic */}
+          {/* Main Loading Animation */}
           <div className="mb-12">
-            <div className="flex items-center justify-center gap-3 mb-8">
-              <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
-              <h1 className="text-4xl md:text-6xl font-light tracking-wide">Gaza Souls Memorial</h1>
+            <div className="relative mb-8">
+              {/* Outer rotating ring */}
+              <div className="w-24 h-24 border-4 border-blue-500/20 border-t-blue-400 rounded-full animate-spin mx-auto mb-4"></div>
+              {/* Inner pulsing circle */}
+              <div className="absolute inset-0 w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full mx-auto top-4 animate-pulse"></div>
+              {/* Center dot */}
+              <div className="absolute inset-0 w-2 h-2 bg-white rounded-full mx-auto top-11 animate-ping"></div>
             </div>
-            
+
+            <h1 className="text-4xl md:text-6xl font-light mb-4 bg-gradient-to-r from-blue-400 via-purple-400 to-green-400 bg-clip-text text-transparent">
+              Gaza Memorial
+            </h1>
             <div className="text-xl md:text-2xl font-light text-gray-300 mb-2">
-              Initializing Sacred Space
+              Honoring Lives Lost
             </div>
-            <div className="text-sm text-gray-400 mb-6 font-light">
-              Loading data from Tech for Palestine • Gaza Daily Reports • West Bank Updates • Infrastructure Damage
-            </div>
-            
-            {/* Subtle loading indicator */}
-            <div className="flex items-center justify-center gap-2 mb-8">
-              <div className="w-2 h-2 bg-white/60 rounded-full animate-pulse"></div>
-              <div className="w-2 h-2 bg-white/40 rounded-full animate-pulse" style={{animationDelay: '0.2s'}}></div>
-              <div className="w-2 h-2 bg-white/60 rounded-full animate-pulse" style={{animationDelay: '0.4s'}}></div>
-            </div>
-            
-            <div className="text-sm text-gray-400 font-mono">
+            <div className="text-lg text-gray-400 font-mono">
               {loadingProgress}
             </div>
           </div>
 
-          {/* Compact System Status with Data Stream Animation */}
-          <div className="mb-6">
-            <div className="bg-gradient-to-r from-gray-900/80 to-black/80 backdrop-blur-sm rounded-lg px-4 py-3 border border-gray-700/30 shadow-xl max-w-sm mx-auto">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="relative">
-                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                    <div className="absolute inset-0 w-2 h-2 bg-green-400/30 rounded-full animate-ping"></div>
-                  </div>
-                  <span className="text-sm font-mono text-white/90">System Online</span>
-                </div>
-                
-                {/* Data Stream Animation */}
-                <div className="flex items-center gap-1">
-                  <div className="flex gap-0.5">
-                    <div className="w-0.5 h-3 bg-blue-400/60 rounded-full animate-pulse" style={{animationDelay: '0ms'}}></div>
-                    <div className="w-0.5 h-4 bg-green-400/60 rounded-full animate-pulse" style={{animationDelay: '100ms'}}></div>
-                    <div className="w-0.5 h-2 bg-yellow-400/60 rounded-full animate-pulse" style={{animationDelay: '200ms'}}></div>
-                    <div className="w-0.5 h-5 bg-blue-400/60 rounded-full animate-pulse" style={{animationDelay: '300ms'}}></div>
-                    <div className="w-0.5 h-3 bg-green-400/60 rounded-full animate-pulse" style={{animationDelay: '400ms'}}></div>
-                    <div className="w-0.5 h-4 bg-yellow-400/60 rounded-full animate-pulse" style={{animationDelay: '500ms'}}></div>
-                  </div>
-                  <span className="text-xs font-mono text-gray-400 ml-1">streaming</span>
-                </div>
-              </div>
-              
-              {/* Compact Status Indicators */}
-              <div className="flex items-center justify-between mt-2 text-xs font-mono">
-                <div className="flex items-center gap-1">
-                  <div className="w-1 h-1 bg-green-400 rounded-full animate-pulse"></div>
-                  <span className="text-green-400">Connected</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-1 h-1 bg-yellow-400 rounded-full animate-pulse" style={{animationDelay: '200ms'}}></div>
-                  <span className="text-yellow-400">Processing</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-1 h-1 bg-blue-400 rounded-full animate-pulse" style={{animationDelay: '400ms'}}></div>
-                  <span className="text-blue-400">Initializing</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Memorial Data Cards Grid - matching WebGL interface aesthetic */}
-          <div className="grid md:grid-cols-3 gap-6 mt-8">
-            {/* Gaza Daily Updates Card */}
-            <div className="bg-gradient-to-br from-gray-900/90 to-black/90 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50 shadow-2xl">
+          {/* Progress Cards Grid */}
+          <div className="grid md:grid-cols-3 gap-6 mt-12">
+            {/* System Status Card */}
+            <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50 shadow-2xl">
               <div className="flex items-center mb-4">
-                <div className="w-3 h-3 bg-white rounded-full animate-pulse mr-3"></div>
-                <h3 className="text-lg font-light text-white">Gaza Daily Updates</h3>
+                <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse mr-3"></div>
+                <h3 className="text-lg font-medium text-white">System Status</h3>
               </div>
 
-              {gazaDailyData.length > 0 ? (
-                <div className="space-y-4">
-                  {(() => {
-                    const latest = gazaDailyData[gazaDailyData.length - 1]
-                    console.log('🔍 Rendering Gaza Daily data:', latest)
-                    return (
-                      <div className="bg-gradient-to-r from-red-900/30 to-orange-900/30 rounded-lg p-4 border border-red-800/30">
-                        <div className="text-gray-300 text-xs mb-3 font-mono">Latest Update: {latest?.report_date}</div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="text-center">
-                            <div className="text-2xl font-bold text-red-400 font-mono">{latest?.killed_cum?.toLocaleString() || 0}</div>
-                            <div className="text-xs text-gray-400">Total Killed</div>
-                            <div className="text-xs text-red-300 font-mono">+{latest?.killed || 0} today</div>
-                          </div>
-                          <div className="text-center">
-                            <div className="text-2xl font-bold text-orange-400 font-mono">{latest?.injured_cum?.toLocaleString() || 0}</div>
-                            <div className="text-xs text-gray-400">Total Injured</div>
-                            <div className="text-xs text-orange-300 font-mono">+{latest?.injured || 0} today</div>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })()}
+              <div className="space-y-3 text-sm text-gray-300">
+                <div className="flex items-center justify-between">
+                  <span>API Connection</span>
+                  <span className="text-green-400">● Active</span>
                 </div>
-              ) : (
-                <div className="text-sm text-gray-300">
-                  <p className="font-light">Loading Gaza daily data...</p>
-                  <div className="text-xs text-gray-500 mt-2 font-mono">Records loaded: {gazaDailyData.length}</div>
+                <div className="flex items-center justify-between">
+                  <span>Data Processing</span>
+                  <span className="text-blue-400">● Loading</span>
                 </div>
-              )}
+                <div className="flex items-center justify-between">
+                  <span>Backup Systems</span>
+                  <span className="text-yellow-400">● Ready</span>
+                </div>
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-gray-700/50">
+                <div className="text-xs text-gray-400 space-y-1">
+                  <p>• Connecting to Tech for Palestine APIs</p>
+                  <p>• Loading casualty records and statistics</p>
+                  <p>• Processing infrastructure damage data</p>
+                  <p>• Preparing memorial visualization</p>
+                </div>
+              </div>
             </div>
 
-            {/* West Bank Memorial Card */}
-            <div className="bg-gradient-to-br from-gray-900/90 to-black/90 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50 shadow-2xl">
+            {/* West Bank Data Card */}
+            <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50 shadow-2xl">
               <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center">
-                  <div className="w-3 h-3 bg-white rounded-full animate-pulse mr-3"></div>
-                  <h3 className="text-lg font-light text-white">West Bank Memorial</h3>
-                </div>
+                <h3 className="text-lg font-medium text-white">West Bank Updates</h3>
                 <button
                   onClick={() => setShowWestBankHistory(!showWestBankHistory)}
-                  className="text-white/60 hover:text-white/80 text-sm font-mono transition-colors"
+                  className="text-blue-400 hover:text-blue-300 text-sm underline transition-colors"
                 >
                   {showWestBankHistory ? 'Hide' : 'History'}
                 </button>
@@ -2056,16 +1849,13 @@ export default function SceneCanvas() {
               )}
             </div>
 
-            {/* Infrastructure Memorial Card */}
-            <div className="bg-gradient-to-br from-gray-900/90 to-black/90 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50 shadow-2xl">
+            {/* Infrastructure Damage Card */}
+            <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50 shadow-2xl">
               <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center">
-                  <div className="w-3 h-3 bg-white rounded-full animate-pulse mr-3"></div>
-                  <h3 className="text-lg font-light text-white">Infrastructure Memorial</h3>
-                </div>
+                <h3 className="text-lg font-medium text-white">Infrastructure Damage</h3>
                 <button
                   onClick={() => setShowInfrastructureDetails(!showInfrastructureDetails)}
-                  className="text-white/60 hover:text-white/80 text-sm font-mono transition-colors"
+                  className="text-blue-400 hover:text-blue-300 text-sm underline transition-colors"
                 >
                   {showInfrastructureDetails ? 'Hide' : 'Details'}
                 </button>
@@ -2140,9 +1930,9 @@ export default function SceneCanvas() {
                   console.log('🔄 Manual data reload triggered')
                   loadPreviewDataNow()
                 }}
-                className="px-8 py-3 bg-gradient-to-r from-gray-900/90 to-black/90 backdrop-blur-sm hover:from-gray-800/90 hover:to-gray-900/90 text-white rounded-lg font-light transition-all duration-300 border border-gray-700/50 hover:border-gray-600/50"
+                className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg font-medium transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
               >
-                Reload Gaza Souls Memorial Data
+                🔄 Reload Preview Data
               </button>
 
               <button
@@ -2158,35 +1948,42 @@ export default function SceneCanvas() {
                     console.log('🎉 Background loading complete!')
                   })
                 }}
-                className="px-8 py-3 bg-gradient-to-r from-gray-900/90 to-black/90 backdrop-blur-sm hover:from-gray-800/90 hover:to-gray-900/90 text-white rounded-lg font-light transition-all duration-300 border border-gray-700/50 hover:border-gray-600/50"
+                className="px-8 py-3 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white rounded-lg font-medium transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl border border-gray-500"
                 title="Skip loading screen and continue to visualization (data will load in background)"
               >
-                Enter Gaza Souls Memorial Space
+                ⏭️ Skip & Continue
               </button>
             </div>
 
-
+            <div className="text-sm text-gray-400">
+              <div className="mb-2">Debug Commands:</div>
+              <div className="flex flex-wrap gap-2 justify-center">
+                <code className="bg-gray-800/80 px-2 py-1 rounded text-xs">loadPreviewData()</code>
+                <code className="bg-gray-800/80 px-2 py-1 rounded text-xs">testAPIs()</code>
+                <code className="bg-gray-800/80 px-2 py-1 rounded text-xs">testCSV()</code>
+              </div>
+            </div>
           </div>
 
           {/* Footer */}
           <div className="mt-12 text-center">
-            <div className="text-sm text-gray-500 mb-2 font-light">
-              Gaza Souls Memorial data provided by Tech for Palestine
+            <div className="text-sm text-gray-500 mb-2">
+              Memorial data provided by Tech for Palestine
             </div>
             <div className="flex justify-center items-center gap-2 text-xs text-gray-600">
               <div className="flex items-center gap-1">
-                <div className="w-1.5 h-1.5 bg-white/60 rounded-full animate-pulse"></div>
-                <span className="font-mono">Live Data</span>
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <span>Live Data</span>
               </div>
               <span>•</span>
               <div className="flex items-center gap-1">
-                <div className="w-1.5 h-1.5 bg-white/40 rounded-full animate-pulse"></div>
-                <span className="font-mono">CSV Backup</span>
+                <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                <span>CSV Backup</span>
               </div>
               <span>•</span>
               <div className="flex items-center gap-1">
-                <div className="w-1.5 h-1.5 bg-white/50 rounded-full animate-pulse"></div>
-                <span className="font-mono">15s Timeout</span>
+                <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
+                <span>15s Timeout</span>
               </div>
             </div>
           </div>
@@ -2230,7 +2027,16 @@ export default function SceneCanvas() {
                 🔄 Reload Preview Data
               </button>
 
-
+              <p className="text-xs text-gray-400 text-center">
+                <div className="mb-2">Debug commands:</div>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  <code className="bg-gray-800/80 px-2 py-1 rounded text-xs">loadPreviewData()</code>
+                  <code className="bg-gray-800/80 px-2 py-1 rounded text-xs">loadWestBankOnly()</code>
+                  <code className="bg-gray-800/80 px-2 py-1 rounded text-xs">loadInfrastructureOnly()</code>
+                  <code className="bg-gray-800/80 px-2 py-1 rounded text-xs">testAPIs()</code>
+                  <code className="bg-gray-800/80 px-2 py-1 rounded text-xs">testCSV()</code>
+                </div>
+              </p>
             </div>
           </div>
         </div>
@@ -2250,9 +2056,6 @@ export default function SceneCanvas() {
 
   return (
     <div className="w-full h-screen bg-black relative">
-      {/* Floating Navigation - Always visible */}
-      <FloatingNavigation currentPage="memorial" />
-
       {/* Unified Sidebar - Hidden during memorial playback */}
       {!isAutoPlaying && (
         <UnifiedSidebar 
@@ -2276,7 +2079,7 @@ export default function SceneCanvas() {
           <div className="bg-gradient-to-br from-gray-900/90 to-black/90 backdrop-blur-sm border border-gray-700/50 p-6 rounded-xl shadow-2xl">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
-              <h1 className="text-3xl font-light tracking-wide">Palestine Memorial</h1>
+              <h1 className="text-3xl font-light tracking-wide">Memorial</h1>
             </div>
             
             <div className="space-y-4">
@@ -2408,7 +2211,6 @@ export default function SceneCanvas() {
           onParticlePositions={setParticlePositions}
           visualSettings={visualSettings}
           focusedIndex={focusedParticleIndex}
-          filteredData={filteredData}
         />
       </Canvas>
 
@@ -2419,7 +2221,7 @@ export default function SceneCanvas() {
             <div className="w-4 h-4 border-2 border-blue-500/30 border-t-blue-400 rounded-full animate-spin"></div>
             <div>
               <div className="text-white text-sm font-medium">Loading Data...</div>
-              <div className="text-gray-400 text-xs">Gaza Souls Memorial data is loading in background</div>
+              <div className="text-gray-400 text-xs">Memorial data is loading in background</div>
             </div>
           </div>
         </div>

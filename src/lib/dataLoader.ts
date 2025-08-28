@@ -295,6 +295,18 @@ function decodeSource(sourceCode: string): string {
  * console.log(`Loaded ${gazaCasualties.length} individual Gaza casualties`);
  */
 // Create a fetch with timeout utility
+/**
+ * Fetch utility with timeout protection
+ *
+ * Prevents API requests from hanging indefinitely by implementing a timeout
+ * mechanism using Promise.race(). If the request takes longer than the
+ * specified timeout, it will be aborted with a descriptive error message.
+ *
+ * @param url - The URL to fetch from
+ * @param timeout - Timeout in milliseconds (default: 10000ms = 10 seconds)
+ * @returns Promise that resolves to the fetch Response or rejects on timeout
+ * @throws Error with descriptive message if request times out
+ */
 function fetchWithTimeout(url: string, timeout = 10000): Promise<Response> {
   return Promise.race([
     fetch(url),
@@ -304,7 +316,28 @@ function fetchWithTimeout(url: string, timeout = 10000): Promise<Response> {
   ])
 }
 
-// CSV parsing utility
+/**
+ * CSV parsing utility for loading fallback data
+ *
+ * Loads and parses CSV files from the public directory as a fallback mechanism
+ * when API requests fail. This ensures the application remains functional
+ * even without internet connectivity or when APIs are temporarily unavailable.
+ *
+ * The function automatically detects numeric values and converts them appropriately,
+ * while preserving string values. This creates a robust fallback system that
+ * maintains data integrity across different data sources.
+ *
+ * @template T - The type of objects to parse from CSV
+ * @param filename - Name of the CSV file in the public directory
+ * @returns Promise resolving to array of parsed objects
+ * @throws Error if file cannot be loaded or parsed
+ *
+ * @example
+ * ```typescript
+ * const casualties = await loadCSVFromPublic<Casualty>('killed-in-gaza.csv');
+ * console.log(`Loaded ${casualties.length} fallback casualties`);
+ * ```
+ */
 async function loadCSVFromPublic<T>(filename: string): Promise<T[]> {
   try {
     console.log(`Loading CSV fallback: ${filename}`)
@@ -725,10 +758,38 @@ function getFallbackData(): DataInfo {
   }
 }
 
+/**
+ * Main data loading function - Central data acquisition system
+ *
+ * This is the primary entry point for loading all memorial data. It orchestrates
+ * parallel API requests to multiple data sources, implements robust error handling,
+ * and provides automatic fallback to CSV files when APIs are unavailable.
+ *
+ * The function uses Promise.allSettled() to ensure that failures in one data source
+ * don't prevent loading from others, creating a resilient data loading system.
+ *
+ * Data Sources (in order of priority):
+ * 1. Live APIs from Tech for Palestine (primary)
+ * 2. CSV backups in public directory (fallback)
+ * 3. Statistical extrapolation for comprehensive representation
+ *
+ * @returns Promise resolving to comprehensive DataInfo object
+ * @throws Error only if all data sources fail catastrophically
+ *
+ * @example
+ * ```typescript
+ * const memorialData = await loadData();
+ * console.log(`Loaded ${memorialData.casualties.length} casualties`);
+ * ```
+ */
 export async function loadData(): Promise<DataInfo> {
   try {
     console.log('🔄 Loading comprehensive memorial data from Tech for Palestine APIs...')
     console.log('⏳ This may take up to 30 seconds depending on network conditions...')
+
+    // ============================================================================
+    // PARALLEL API FETCHING - Optimal performance with resilience
+    // ============================================================================
 
     // Fetch all data sources in parallel for better performance
     const fetchPromises = [

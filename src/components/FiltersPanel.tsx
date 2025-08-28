@@ -1,3 +1,28 @@
+/**
+ * @fileoverview FiltersPanel Component - Data Filtering Interface
+ *
+ * This component provides comprehensive filtering capabilities for the casualty data,
+ * allowing users to narrow down the visualization to specific demographics, age groups,
+ * data sources, and other criteria. The filtered data directly affects which particles
+ * are displayed in the 3D visualization.
+ *
+ * Key Features:
+ * - Gender filtering (male, female, all)
+ * - Age range filtering with dynamic sliders
+ * - Data source filtering (humanitarian organizations)
+ * - Real-time statistics display
+ * - Collapsible interface sections
+ * - Filter reset functionality
+ * - Active filter indicators
+ *
+ * The component uses useMemo for performance optimization when calculating
+ * statistics and available filter options from the casualty data.
+ *
+ * @author Gaza Memorial Visualization Team
+ * @version 1.0.0
+ * @since 2024
+ */
+
 'use client'
 
 import {
@@ -13,13 +38,44 @@ import { Casualty } from '@/lib/dataLoader'
 import { useMemo, useState } from 'react'
 import { ChevronRight, ChevronDown, Filter, X, Users, Calendar, FileText, RotateCcw, Search } from 'lucide-react'
 
+/**
+ * Props for the FiltersPanel component
+ */
 interface FiltersPanelProps {
+  /** Array of casualty data to filter */
   data: Casualty[]
 }
 
+/**
+ * FiltersPanel - Data Filtering and Statistics Component
+ *
+ * Provides comprehensive filtering controls for the casualty data visualization.
+ * Users can filter by gender, age range, data source, and view real-time statistics
+ * about the filtered dataset. The component features a collapsible interface
+ * with expandable sections for different filter categories.
+ *
+ * The filtering system works by:
+ * 1. **Gender Filter**: Show only male, female, or all casualties
+ * 2. **Age Range**: Use dual sliders to set minimum and maximum age
+ * 3. **Source Filter**: Filter by humanitarian organization/data source
+ * 4. **Statistics**: Display real-time demographic breakdown
+ * 5. **Reset**: Clear all filters to show complete dataset
+ *
+ * All filters are applied in real-time and immediately update the 3D visualization,
+ * showing only the particles that match the current filter criteria.
+ *
+ * @param props - Component configuration
+ * @returns React component for data filtering interface
+ */
 export default function FiltersPanel({ data }: FiltersPanelProps) {
+  // ============================================================================
+  // STATE MANAGEMENT
+  // ============================================================================
+
   const { filters, setFilters, isFiltered } = useStore()
+  /** Main panel expansion state */
   const [isExpanded, setIsExpanded] = useState(false)
+  /** Individual section expansion states */
   const [expandedSections, setExpandedSections] = useState({
     gender: true,
     age: true,

@@ -1,16 +1,39 @@
+/**
+ * @fileoverview UnifiedSidebar Component - Main Control Panel for Gaza Memorial Visualization
+ *
+ * This component serves as the comprehensive control center for the 3D memorial visualization,
+ * providing users with intuitive controls to customize every aspect of the experience.
+ *
+ * Key Features:
+ * - Visual Settings: Particle appearance, sphere distortion, lighting, shaders
+ * - Audio Controls: Volume settings, voice synthesis options
+ * - UI Customization: Panel visibility, tooltips, information display
+ * - Data Filtering: Search, filter, and navigate through casualty data
+ * - Social Sharing: Export and share the memorial experience
+ * - Real-time Preview: Live updates of all visualization changes
+ *
+ * The sidebar is designed to be collapsible and responsive, ensuring it doesn't
+ * interfere with the immersive memorial experience while providing full control
+ * over all visualization parameters.
+ *
+ * @author Gaza Memorial Visualization Team
+ * @version 1.0.0
+ * @since 2024
+ */
+
 'use client'
 
 import { useState } from 'react'
-import { 
-  ChevronRight, 
-  ChevronDown, 
-  Settings, 
+import {
+  ChevronRight,
+  ChevronDown,
+  Settings,
   Share2,
   Filter,
-  X, 
-  Eye, 
-  EyeOff, 
-  Palette, 
+  X,
+  Eye,
+  EyeOff,
+  Palette,
   Layout,
   Info,
   Volume2,
@@ -38,62 +61,135 @@ import {
 } from '@/components/ui/select'
 import { Slider } from '@/components/ui/slider'
 
+/**
+ * Props for the UnifiedSidebar component
+ */
 interface UnifiedSidebarProps {
+  /** Array of casualty data for filtering and display */
   data: Casualty[]
+  /** Total number of casualties in current view */
   casualtyCount: number
+  /** UI visibility settings */
   uiSettings: {
+    /** Show memorial information panel */
     showMemorialInfo: boolean
+    /** Show user instructions */
     showInstructions: boolean
+    /** Show data filtering panel */
     showFiltersPanel: boolean
+    /** Show audio control panel */
     showAudioControls: boolean
+    /** Show hover tooltips */
     showHoverTooltip: boolean
   }
+  /** Callback to update UI settings */
   onUISettingsChange: (settings: Partial<UnifiedSidebarProps['uiSettings']>) => void
+  /** Visual appearance and behavior settings */
   visualSettings: {
+    /** Size of individual particles (0.1-2.0) */
     particleSize: number
+    /** Opacity of particles (0.0-1.0) */
     particleOpacity: number
+    /** Show background stars */
     showStars: boolean
+    /** Show central light source */
     showCentralLight: boolean
+    /** Enable automatic scene rotation */
     enableSceneRotation: boolean
+    /** Enable automatic camera rotation */
     cameraAutoRotate: boolean
+    /** Speed of camera transitions (0.5-2.0) */
     cameraTransitionSpeed: number
+    /** Downward gravitational force */
     gravity: number
+    /** Velocity decay factor (0.9-0.99) */
     velocityDamping: number
+    /** Sphere containment force strength */
     sphereStrength: number
+    /** Sphere shape distortion factor (1.0 = perfect sphere) */
     sphereDistortion: number
+    /** Surface noise intensity for organic shapes */
     sphereNoise: number
+    /** Pulsing animation intensity */
     spherePulse: number
-    // Creative atmosphere controls
+    /** Creative atmosphere controls */
+    /** Ambient lighting intensity */
     ambientLightIntensity: number
-    fogDensity: number
+    /** Fog density removed - was causing visibility issues */
+    /** Enable particle trail effects */
     particleTrails: boolean
+    /** Length of particle trails */
     trailLength: number
+    /** Maximum number of trails */
     trailCount: number
+    /** Color of particle trails */
     trailColor: string
+    /** Intensity of particle glow effect */
     glowIntensity: number
+    /** Color temperature adjustment */
     colorTemperature: number
+    /** Shader mode selector (0=normal, 1=ethereal, 2=cosmic, 3=aurora, 4=plasma) */
     shaderMode: number
+    /** Canvas shader properties removed */
   }
+  /** Callback to update visual settings */
   onVisualSettingsChange: (settings: Partial<UnifiedSidebarProps['visualSettings']>) => void
+  /** Audio playback settings */
   audioSettings: {
+    /** Whether background music is muted */
     musicMuted: boolean
+    /** Whether voice narration is muted */
     voiceMuted: boolean
+    /** Background music volume (0.0-1.0) */
     musicVolume: number
   }
+  /** Callback to update audio settings */
   onAudioSettingsChange: (settings: Partial<UnifiedSidebarProps['audioSettings']>) => void
 }
 
-// Helper function to get shader mode name
+/**
+ * Get human-readable name for shader mode
+ *
+ * @param mode - Shader mode number (0-3)
+ * @returns Human-readable shader mode name
+ */
 function getShaderModeName(mode: number): string {
   switch (mode) {
     case 0: return 'Default'
     case 1: return 'Ethereal'
     case 2: return 'Cosmic'
     case 3: return 'Aurora'
+    case 4: return 'Plasma'
     default: return 'Unknown'
   }
 }
 
+// Canvas shader function removed - no longer needed
+
+/**
+ * UnifiedSidebar - Main Control Panel Component
+ *
+ * This component provides a comprehensive interface for controlling all aspects
+ * of the Gaza Memorial Visualization. It features multiple collapsible panels
+ * for different control categories and real-time updates to the 3D scene.
+ *
+ * The sidebar is designed to be:
+ * - **Collapsible**: Can be minimized to not interfere with the memorial experience
+ * - **Responsive**: Adapts to different screen sizes
+ * - **Organized**: Groups controls by functionality (Visual, Audio, Data, etc.)
+ * - **Real-time**: All changes are immediately reflected in the visualization
+ *
+ * Key Control Categories:
+ * 1. **Visual Settings**: Particle appearance, sphere distortion, lighting
+ * 2. **Creative Atmosphere**: Shader modes, lighting, atmospheric effects
+ * 3. **Audio Controls**: Volume settings, voice synthesis options
+ * 4. **Data Filtering**: Search and filter casualty data
+ * 5. **UI Customization**: Panel visibility and display options
+ * 6. **Social Sharing**: Export and share functionality
+ *
+ * @param props - Component configuration
+ * @returns React component for the unified control sidebar
+ */
 export default function UnifiedSidebar({
   data,
   casualtyCount,
@@ -181,7 +277,7 @@ export default function UnifiedSidebar({
       spherePulse: 0.2,
       // Creative atmosphere defaults (optimized for performance)
       ambientLightIntensity: 0.2,
-      fogDensity: 0.0,
+      // fogDensity removed
       particleTrails: false,
       trailLength: 20,
       trailCount: 100,
@@ -1005,21 +1101,7 @@ export default function UnifiedSidebar({
               />
             </div>
 
-            {/* Fog Density */}
-            <div>
-              <label className="block text-sm text-gray-300 mb-2">
-                Atmospheric Fog: {Math.round(visualSettings.fogDensity * 100)}%
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="0.02"
-                step="0.002"
-                value={visualSettings.fogDensity}
-                onChange={(e) => onVisualSettingsChange({ fogDensity: parseFloat(e.target.value) })}
-                className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-              />
-            </div>
+            {/* Atmospheric Fog control removed - was causing visibility issues */}
 
             {/* Glow Intensity */}
             <div>
@@ -1071,8 +1153,11 @@ export default function UnifiedSidebar({
                 <option value={1}>Ethereal</option>
                 <option value={2}>Cosmic</option>
                 <option value={3}>Aurora</option>
+                <option value={4}>Plasma</option>
               </select>
             </div>
+
+            {/* Canvas shader controls removed - they were not working properly */}
 
             {/* Particle Trails Toggle */}
             <div className="flex items-center justify-between">

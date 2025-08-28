@@ -35,7 +35,7 @@ interface GlyphFieldProps {
 
 export default function GlyphField({ data }: GlyphFieldProps) {
   const { mode, setHovered, setSelected } = useStore()
-  const materialRef = useRef<any>()
+  const materialRef = useRef<any>(null)
   const pointsRef = useRef<THREE.Points>(null!)
   const { raycaster, camera, mouse } = useThree()
   const [lastHovered, setLastHovered] = useState<number | null>(null)
@@ -99,18 +99,21 @@ export default function GlyphField({ data }: GlyphFieldProps) {
       <bufferGeometry>
         <bufferAttribute
           attach="attributes-posCloud"
+          args={[positions, 3]}
           count={positions.length / 3}
           array={positions}
           itemSize={3}
         />
         <bufferAttribute
           attach="attributes-posPlane"
+          args={[planePositions, 3]}
           count={planePositions.length / 3}
           array={planePositions}
           itemSize={3}
         />
         <bufferAttribute
           attach="attributes-aIndex"
+          args={[indices, 1]}
           count={indices.length}
           array={indices}
           itemSize={1}
