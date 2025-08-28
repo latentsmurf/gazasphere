@@ -7,8 +7,7 @@
 
 import { Metadata } from 'next'
 import Link from 'next/link'
-import { Info } from 'lucide-react'
-import FloatingNavigation from '@/components/FloatingNavigation'
+import { Home, FileText, Info } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'About | Gaza Souls Memorial - Honoring Lives Lost in Palestine',
@@ -27,12 +26,33 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Floating Navigation */}
-      <FloatingNavigation currentPage="about" />
-
-      {/* Simplified Header */}
+      {/* Header with Navigation */}
       <header className="border-b border-border bg-card/90 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 py-6">
+          <div className="flex items-center justify-between mb-4">
+            {/* Navigation */}
+            <nav className="flex items-center gap-4">
+              <Link 
+                href="/" 
+                className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
+              >
+                <Home size={16} />
+                <span className="text-sm font-medium">Memorial</span>
+              </Link>
+              <span className="text-muted-foreground">•</span>
+              <Link 
+                href="/blog" 
+                className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
+              >
+                <FileText size={16} />
+                <span className="text-sm font-medium">News</span>
+              </Link>
+            </nav>
+            
+            {/* Spacer for balance */}
+            <div></div>
+          </div>
+          
           <div className="text-center">
             <Link 
               href="/" 

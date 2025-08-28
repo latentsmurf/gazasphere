@@ -8,8 +8,7 @@
 
 import { Metadata } from 'next'
 import Link from 'next/link'
-import { FileText } from 'lucide-react'
-import FloatingNavigation from '@/components/FloatingNavigation'
+import { FileText, Home, Info } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'News & Updates | Palestine Memorial',
@@ -35,12 +34,33 @@ export default function BlogLayout({
 }) {
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Floating Navigation */}
-      <FloatingNavigation currentPage="blog" />
-
-      {/* Simplified Header */}
+      {/* Header with Navigation */}
       <header className="border-b border-border bg-card/90 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 py-6">
+          <div className="flex items-center justify-between mb-4">
+            {/* Navigation */}
+            <nav className="flex items-center gap-4">
+              <Link 
+                href="/" 
+                className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
+              >
+                <Home size={16} />
+                <span className="text-sm font-medium">Memorial</span>
+              </Link>
+              <span className="text-muted-foreground">•</span>
+              <Link 
+                href="/about" 
+                className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
+              >
+                <Info size={16} />
+                <span className="text-sm font-medium">About</span>
+              </Link>
+            </nav>
+            
+            {/* Spacer for balance */}
+            <div></div>
+          </div>
+          
           <div className="text-center">
             <Link 
               href="/" 

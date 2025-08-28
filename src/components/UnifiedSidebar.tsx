@@ -24,6 +24,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import {
   ChevronRight,
   ChevronDown,
@@ -44,7 +45,7 @@ import {
   Search,
   Twitter,
   Facebook,
-  Link,
+  Link as LinkIcon,
   Mail,
   MessageCircle,
   Linkedin
@@ -386,7 +387,29 @@ export default function UnifiedSidebar({
           {/* Header with Tabs */}
           <div className="border-b border-gray-700">
             <div className="flex items-center justify-between p-4">
-              <h2 className="text-lg font-semibold text-white">Memorial Controls</h2>
+              <div className="flex items-center gap-3">
+                <h2 className="text-lg font-semibold text-white">Memorial Controls</h2>
+                {/* Navigation Links */}
+                <div className="flex items-center gap-1 ml-4">
+                  <Link
+                    href="/blog"
+                    className="flex items-center gap-1 px-2 py-1 text-xs text-gray-400 hover:text-blue-400 transition-colors rounded"
+                    title="News & Updates"
+                  >
+                    <FileText size={12} />
+                    News
+                  </Link>
+                  <span className="text-gray-600">•</span>
+                  <Link
+                    href="/about"
+                    className="flex items-center gap-1 px-2 py-1 text-xs text-gray-400 hover:text-blue-400 transition-colors rounded"
+                    title="About the Project"
+                  >
+                    <Info size={12} />
+                    About
+                  </Link>
+                </div>
+              </div>
               <button
                 onClick={() => setIsExpanded(false)}
                 className="text-gray-400 hover:text-white transition-colors"
@@ -1375,7 +1398,7 @@ export default function UnifiedSidebar({
                     onClick={handleCopyLink}
                     className="w-full flex items-center gap-3 p-3 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors text-sm"
                   >
-                    <Link size={16} />
+                    <LinkIcon size={16} />
                     {copied ? 'Link Copied!' : 'Copy Link'}
                   </button>
                 </div>

@@ -47,7 +47,7 @@ import { useStore } from '@/lib/store'
 import AudioPlayback from './AudioPlayback'
 import CameraController from './CameraController'
 import UnifiedSidebar from './UnifiedSidebar'
-import FloatingNavigation from './FloatingNavigation'
+
 import * as THREE from 'three'
 import { extend } from '@react-three/fiber'
 
@@ -2250,9 +2250,6 @@ export default function SceneCanvas() {
 
   return (
     <div className="w-full h-screen bg-black relative">
-      {/* Floating Navigation - Always visible */}
-      <FloatingNavigation currentPage="memorial" />
-
       {/* Unified Sidebar - Hidden during memorial playback */}
       {!isAutoPlaying && (
         <UnifiedSidebar 
