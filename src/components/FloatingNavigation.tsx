@@ -2,80 +2,86 @@
  * Floating Navigation Component
  * 
  * Provides elegant navigation access without cluttering the memorial interface.
- * Features a subtle menu button that expands to show navigation options.
+ * Features a compact navigation bar that integrates seamlessly with the memorial.
  */
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { Menu, X, FileText, Info, Home } from 'lucide-react'
+import { FileText, Info, Home, ChevronDown } from 'lucide-react'
 
 interface FloatingNavigationProps {
   /** Current page to highlight active state */
-  currentPage?: 'memorial' | 'blog' | 'about'
+  currentPage?: 'memorial' | 'blog' | 'about' | 'admin'
 }
 
 export default function FloatingNavigation({ currentPage = 'memorial' }: FloatingNavigationProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
 
   const navigationItems = [
     {
       id: 'memorial',
       label: 'Memorial',
       href: '/',
-      icon: Home,
-      description: 'Interactive memorial visualization'
+      icon: Home
     },
     {
       id: 'blog',
       label: 'News',
       href: '/blog',
-      icon: FileText,
-      description: 'Latest updates and stories'
+      icon: FileText
     },
     {
       id: 'about',
       label: 'About',
       href: '/about',
-      icon: Info,
-      description: 'Learn about the project'
+      icon: Info
     }
   ]
 
-  return (
-    <div className="fixed top-6 right-6 z-50">
-      {/* Menu Button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`
-          w-12 h-12 rounded-full backdrop-blur-sm border shadow-lg transition-all duration-300
-          ${isOpen 
-            ? 'bg-gray-900/95 border-gray-600 rotate-90' 
-            : 'bg-gray-900/80 border-gray-700/50 hover:bg-gray-900/90 hover:border-gray-600'
-          }
-        `}
-        aria-label="Navigation menu"
-      >
-        {isOpen ? (
-          <X size={20} className="text-white mx-auto" />
-        ) : (
-          <Menu size={20} className="text-white mx-auto" />
-        )}
-      </button>
+  const currentItem = navigationItems.find(item => item.id === currentPage) || navigationItems[0]
+  const CurrentIcon = currentItem.icon
 
-      {/* Navigation Menu */}
-      {isOpen && (
-        <>
-          {/* Backdrop */}
-          <div 
-            className="fixed inset-0 bg-black/20 backdrop-blur-sm -z-10"
-            onClick={() => setIsOpen(false)}
-          />
-          
-          {/* Menu Items */}
-          <div className="absolute top-16 right-0 w-72 bg-gray-900/95 backdrop-blur-sm border border-gray-700/50 rounded-xl shadow-2xl overflow-hidden">
-            <div className="p-2">
+  return (
+    <div ref={menuRef} className="fixed top-6 left-6 z-10">
+      {/* Compact Navigation Bar */}
+      <div className="flex items-center gap-2">
+        {/* Current Page Indicator */}
+        <div className="flex items-center gap-2 bg-background/90 backdrop-blur-sm border border-border rounded-lg px-3 py-2 shadow-lg">
+          <CurrentIcon size={16} className="text-primary" />
+          <span className="text-sm font-medium text-foreground">{currentItem.label}</span>
+        </div>
+
+        {/* Navigation Dropdown */}
+        <div className="relative">
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="flex items-center gap-1 bg-background/90 backdrop-blur-sm border border-border rounded-lg px-3 py-2 shadow-lg hover:bg-background/95 transition-colors"
+            aria-label="Navigation menu"
+          >
+            <ChevronDown 
+              size={16} 
+              className={`text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} 
+            />
+          </button>
+
+          {/* Dropdown Menu */}
+          {isOpen && (
+            <div className="absolute top-12 left-0 w-48 bg-background/95 backdrop-blur-sm border border-border rounded-lg shadow-xl overflow-hidden">
               {navigationItems.map((item) => {
                 const Icon = item.icon
                 const isActive = currentPage === item.id
@@ -86,43 +92,25 @@ export default function FloatingNavigation({ currentPage = 'memorial' }: Floatin
                     href={item.href}
                     onClick={() => setIsOpen(false)}
                     className={`
-                      flex items-center gap-3 p-4 rounded-lg transition-all duration-200
+                      flex items-center gap-3 px-4 py-3 transition-colors duration-200
                       ${isActive 
-                        ? 'bg-blue-600/20 border border-blue-500/30 text-blue-300' 
-                        : 'text-gray-300 hover:bg-gray-800/50 hover:text-white'
+                        ? 'bg-primary/10 text-primary border-r-2 border-primary' 
+                        : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
                       }
                     `}
                   >
-                    <div className={`
-                      p-2 rounded-lg
-                      ${isActive 
-                        ? 'bg-blue-500/20 text-blue-400' 
-                        : 'bg-gray-800/50 text-gray-400 group-hover:text-gray-300'
-                      }
-                    `}>
-                      <Icon size={18} />
-                    </div>
-                    <div className="flex-1">
-                      <div className="font-medium">{item.label}</div>
-                      <div className="text-xs text-gray-500">{item.description}</div>
-                    </div>
+                    <Icon size={16} />
+                    <span className="text-sm font-medium">{item.label}</span>
                     {isActive && (
-                      <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                      <div className="ml-auto w-2 h-2 bg-primary rounded-full"></div>
                     )}
                   </Link>
                 )
               })}
             </div>
-            
-            {/* Footer */}
-            <div className="border-t border-gray-700/50 p-4 bg-gray-900/50">
-              <p className="text-xs text-gray-500 text-center">
-                Palestine Memorial Project
-              </p>
-            </div>
-          </div>
-        </>
-      )}
+          )}
+        </div>
+      </div>
     </div>
   )
 }
