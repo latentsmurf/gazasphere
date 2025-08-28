@@ -25,24 +25,24 @@ export const metadata: Metadata = {
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-black text-white">
       {/* Header with Navigation */}
-      <header className="border-b border-border bg-card/90 backdrop-blur-sm">
+      <header className="border-b border-gray-700 bg-gray-900/90 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between mb-4">
             {/* Navigation - Made bigger and more prominent */}
             <nav className="flex items-center gap-3">
               <Link 
                 href="/" 
-                className="flex items-center gap-2 px-4 py-2 text-base font-medium text-muted-foreground hover:text-primary hover:bg-muted/20 transition-colors rounded-lg"
+                className="flex items-center gap-2 px-4 py-2 text-base font-medium text-gray-300 hover:text-blue-400 hover:bg-gray-800/50 transition-colors rounded-lg"
               >
                 <Home size={18} />
                 <span>Memorial</span>
               </Link>
-              <span className="text-muted-foreground text-lg">•</span>
+              <span className="text-gray-500 text-lg">•</span>
               <Link 
                 href="/blog" 
-                className="flex items-center gap-2 px-4 py-2 text-base font-medium text-muted-foreground hover:text-primary hover:bg-muted/20 transition-colors rounded-lg"
+                className="flex items-center gap-2 px-4 py-2 text-base font-medium text-gray-300 hover:text-blue-400 hover:bg-gray-800/50 transition-colors rounded-lg"
               >
                 <FileText size={18} />
                 <span>News</span>
@@ -56,12 +56,12 @@ export default function AboutPage() {
           <div className="text-center">
             <Link 
               href="/" 
-              className="text-2xl font-bold text-foreground hover:text-primary transition-colors inline-flex items-center gap-3"
+              className="text-2xl font-bold text-white hover:text-blue-400 transition-colors inline-flex items-center gap-3"
             >
-              <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+              <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
               Palestine Memorial
             </Link>
-            <div className="flex items-center justify-center gap-2 text-muted-foreground mt-2">
+            <div className="flex items-center justify-center gap-2 text-gray-400 mt-2">
               <Info size={16} />
               <span>About the Project</span>
             </div>
@@ -72,10 +72,10 @@ export default function AboutPage() {
       <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Hero Section */}
         <section className="text-center mb-16">
-          <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6">
+          <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
             About Palestine Memorial
           </h1>
-          <p className="text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
+          <p className="text-xl text-gray-400 max-w-4xl mx-auto leading-relaxed">
             A digital space dedicated to honoring the memory of 63,872 lives lost in Gaza, 
             transforming data into a living memorial that preserves the humanity behind the statistics.
           </p>
