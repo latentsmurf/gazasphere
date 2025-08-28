@@ -96,23 +96,13 @@ export default function BlogPage() {
           >
             {/* Featured Image */}
             {post.image && (
-              <div className="aspect-video overflow-hidden">
-                <img
-                  src={post.image}
-                  alt={post.imageAlt || post.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  onError={(e) => {
-                    // Fallback to a placeholder if image fails to load
-                    e.currentTarget.src = `data:image/svg+xml;base64,${btoa(`
-                      <svg width="400" height="225" xmlns="http://www.w3.org/2000/svg">
-                        <rect width="400" height="225" fill="#1f2937"/>
-                        <text x="200" y="112" text-anchor="middle" fill="#6b7280" font-family="Arial" font-size="14">
-                          ${post.category}
-                        </text>
-                      </svg>
-                    `)}`
-                  }}
-                />
+              <div className="aspect-video overflow-hidden bg-card border border-border rounded-t-lg">
+                <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                  <div className="text-center">
+                    <div className="text-2xl mb-2">📰</div>
+                    <p className="text-xs">{post.category}</p>
+                  </div>
+                </div>
               </div>
             )}
 
