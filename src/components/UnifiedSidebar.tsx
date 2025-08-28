@@ -387,25 +387,24 @@ export default function UnifiedSidebar({
           {/* Header with Tabs */}
           <div className="border-b border-gray-700">
             <div className="flex items-center justify-between p-4">
-              <div className="flex items-center gap-3">
-                <h2 className="text-lg font-semibold text-white">Memorial Controls</h2>
-                {/* Navigation Links */}
-                <div className="flex items-center gap-1 ml-4">
+              <div className="flex items-center gap-4">
+                {/* Navigation Links - Made bigger and more prominent */}
+                <div className="flex items-center gap-3">
                   <Link
                     href="/blog"
-                    className="flex items-center gap-1 px-2 py-1 text-xs text-gray-400 hover:text-blue-400 transition-colors rounded"
+                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-300 hover:text-blue-400 hover:bg-gray-800/50 transition-colors rounded-lg"
                     title="News & Updates"
                   >
-                    <FileText size={12} />
+                    <FileText size={16} />
                     News
                   </Link>
                   <span className="text-gray-600">•</span>
                   <Link
                     href="/about"
-                    className="flex items-center gap-1 px-2 py-1 text-xs text-gray-400 hover:text-blue-400 transition-colors rounded"
+                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-300 hover:text-blue-400 hover:bg-gray-800/50 transition-colors rounded-lg"
                     title="About the Project"
                   >
-                    <Info size={12} />
+                    <Info size={16} />
                     About
                   </Link>
                 </div>

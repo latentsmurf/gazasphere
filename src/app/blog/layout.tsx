@@ -38,22 +38,22 @@ export default function BlogLayout({
       <header className="border-b border-border bg-card/90 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between mb-4">
-            {/* Navigation */}
-            <nav className="flex items-center gap-4">
+            {/* Navigation - Made bigger and more prominent */}
+            <nav className="flex items-center gap-3">
               <Link 
                 href="/" 
-                className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
+                className="flex items-center gap-2 px-4 py-2 text-base font-medium text-muted-foreground hover:text-primary hover:bg-muted/20 transition-colors rounded-lg"
               >
-                <Home size={16} />
-                <span className="text-sm font-medium">Memorial</span>
+                <Home size={18} />
+                <span>Memorial</span>
               </Link>
-              <span className="text-muted-foreground">•</span>
+              <span className="text-muted-foreground text-lg">•</span>
               <Link 
                 href="/about" 
-                className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
+                className="flex items-center gap-2 px-4 py-2 text-base font-medium text-muted-foreground hover:text-primary hover:bg-muted/20 transition-colors rounded-lg"
               >
-                <Info size={16} />
-                <span className="text-sm font-medium">About</span>
+                <Info size={18} />
+                <span>About</span>
               </Link>
             </nav>
             
