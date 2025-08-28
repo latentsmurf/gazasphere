@@ -118,12 +118,12 @@ export default function AdminBlogPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Blog Posts</h1>
-          <p className="text-muted-foreground">Manage your blog content and articles</p>
+          <h1 className="text-3xl font-bold text-white">Blog Posts</h1>
+          <p className="text-gray-400">Manage your blog content and articles</p>
         </div>
         <Link 
           href="/admin/blog/new"
-          className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-medium transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-400 hover:bg-blue-300 text-black rounded-lg font-medium transition-colors"
         >
           <Plus size={16} />
           New Post

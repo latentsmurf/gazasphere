@@ -33,31 +33,31 @@ export default function AdminLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-black text-white">
       {/* Admin Header */}
-      <header className="border-b border-border bg-card sticky top-0 z-50">
+      <header className="border-b border-gray-700 bg-gray-900 sticky top-0 z-50">
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Link 
                 href="/admin" 
-                className="text-xl font-bold text-foreground hover:text-primary transition-colors flex items-center gap-2"
+                className="text-xl font-bold text-white hover:text-blue-400 transition-colors flex items-center gap-2"
               >
                 <Shield size={20} />
                 Admin Panel
               </Link>
-              <span className="text-muted-foreground">|</span>
-              <span className="text-muted-foreground">Palestine Memorial CMS</span>
+              <span className="text-gray-500">|</span>
+              <span className="text-gray-400">Palestine Memorial CMS</span>
             </div>
             <div className="flex items-center space-x-4">
               <Link 
                 href="/" 
-                className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2"
+                className="text-gray-400 hover:text-white transition-colors flex items-center gap-2"
               >
                 <Home size={16} />
                 View Site
               </Link>
-              <button className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2">
+              <button className="text-gray-400 hover:text-white transition-colors flex items-center gap-2">
                 <LogOut size={16} />
                 Logout
               </button>
@@ -68,13 +68,13 @@ export default function AdminLayout({
 
       <div className="flex">
         {/* Admin Sidebar */}
-        <aside className="w-64 bg-card border-r border-border min-h-screen">
+        <aside className="w-64 bg-gray-900 border-r border-gray-700 min-h-screen">
           <nav className="p-6">
             <ul className="space-y-2">
               <li>
                 <Link 
                   href="/admin" 
-                  className="flex items-center gap-3 px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
+                  className="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
                 >
                   <BarChart3 size={18} />
                   Dashboard
@@ -83,7 +83,7 @@ export default function AdminLayout({
               <li>
                 <Link 
                   href="/admin/blog" 
-                  className="flex items-center gap-3 px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
+                  className="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
                 >
                   <FileText size={18} />
                   Blog Posts
@@ -92,7 +92,7 @@ export default function AdminLayout({
               <li>
                 <Link 
                   href="/admin/media" 
-                  className="flex items-center gap-3 px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
+                  className="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
                 >
                   <Image size={18} />
                   Media Library
@@ -101,7 +101,7 @@ export default function AdminLayout({
               <li>
                 <Link 
                   href="/admin/users" 
-                  className="flex items-center gap-3 px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
+                  className="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
                 >
                   <Users size={18} />
                   Users
@@ -110,7 +110,7 @@ export default function AdminLayout({
               <li>
                 <Link 
                   href="/admin/settings" 
-                  className="flex items-center gap-3 px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
+                  className="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
                 >
                   <Settings size={18} />
                   Settings
@@ -121,7 +121,7 @@ export default function AdminLayout({
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-6 bg-black">
           {children}
         </main>
       </div>

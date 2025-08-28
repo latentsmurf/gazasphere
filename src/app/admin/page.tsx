@@ -64,12 +64,12 @@ export default function AdminDashboard() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground">Welcome back to the Palestine Memorial admin panel</p>
+          <h1 className="text-3xl font-bold text-white">Dashboard</h1>
+          <p className="text-gray-400">Welcome back to the Palestine Memorial admin panel</p>
         </div>
         <Link 
           href="/admin/blog/new"
-          className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-medium transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-400 hover:bg-blue-300 text-black rounded-lg font-medium transition-colors"
         >
           <Plus size={16} />
           New Post
@@ -78,63 +78,63 @@ export default function AdminDashboard() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-card border border-border rounded-lg p-6">
+        <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-muted-foreground text-sm">Total Posts</p>
-              <p className="text-2xl font-bold text-foreground">{stats.totalPosts}</p>
+              <p className="text-gray-400 text-sm">Total Posts</p>
+              <p className="text-2xl font-bold text-white">{stats.totalPosts}</p>
             </div>
-            <div className="p-3 bg-primary/10 rounded-lg">
-              <FileText className="text-primary" size={20} />
+            <div className="p-3 bg-blue-400/10 rounded-lg">
+              <FileText className="text-blue-400" size={20} />
             </div>
           </div>
         </div>
 
-        <div className="bg-card border border-border rounded-lg p-6">
+        <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-muted-foreground text-sm">Total Views</p>
-              <p className="text-2xl font-bold text-foreground">{stats.totalViews.toLocaleString()}</p>
+              <p className="text-gray-400 text-sm">Total Views</p>
+              <p className="text-2xl font-bold text-white">{stats.totalViews.toLocaleString()}</p>
             </div>
-            <div className="p-3 bg-primary/10 rounded-lg">
-              <Eye className="text-primary" size={20} />
+            <div className="p-3 bg-blue-400/10 rounded-lg">
+              <Eye className="text-blue-400" size={20} />
             </div>
           </div>
         </div>
 
-        <div className="bg-card border border-border rounded-lg p-6">
+        <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-muted-foreground text-sm">Active Users</p>
-              <p className="text-2xl font-bold text-foreground">{stats.totalUsers}</p>
+              <p className="text-gray-400 text-sm">Active Users</p>
+              <p className="text-2xl font-bold text-white">{stats.totalUsers}</p>
             </div>
-            <div className="p-3 bg-primary/10 rounded-lg">
-              <Users className="text-primary" size={20} />
+            <div className="p-3 bg-blue-400/10 rounded-lg">
+              <Users className="text-blue-400" size={20} />
             </div>
           </div>
         </div>
 
-        <div className="bg-card border border-border rounded-lg p-6">
+        <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-muted-foreground text-sm">Monthly Views</p>
-              <p className="text-2xl font-bold text-foreground">{stats.monthlyViews.toLocaleString()}</p>
+              <p className="text-gray-400 text-sm">Monthly Views</p>
+              <p className="text-2xl font-bold text-white">{stats.monthlyViews.toLocaleString()}</p>
             </div>
-            <div className="p-3 bg-primary/10 rounded-lg">
-              <TrendingUp className="text-primary" size={20} />
+            <div className="p-3 bg-blue-400/10 rounded-lg">
+              <TrendingUp className="text-blue-400" size={20} />
             </div>
           </div>
         </div>
       </div>
 
       {/* Recent Posts */}
-      <div className="bg-card border border-border rounded-lg">
-        <div className="p-6 border-b border-border">
+      <div className="bg-gray-900 border border-gray-700 rounded-lg">
+        <div className="p-6 border-b border-gray-700">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-foreground">Recent Posts</h2>
+            <h2 className="text-xl font-semibold text-white">Recent Posts</h2>
             <Link 
               href="/admin/blog"
-              className="text-primary hover:text-primary/80 text-sm font-medium"
+              className="text-blue-400 hover:text-blue-300 text-sm font-medium"
             >
               View All
             </Link>
@@ -143,10 +143,10 @@ export default function AdminDashboard() {
         <div className="p-6">
           <div className="space-y-4">
             {recentPosts.map((post) => (
-              <div key={post.id} className="flex items-center justify-between p-4 bg-accent/50 rounded-lg">
+              <div key={post.id} className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg">
                 <div className="flex-1">
-                  <h3 className="font-medium text-foreground">{post.title}</h3>
-                  <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
+                  <h3 className="font-medium text-white">{post.title}</h3>
+                  <div className="flex items-center gap-4 mt-1 text-sm text-gray-400">
                     <span className="flex items-center gap-1">
                       <Calendar size={14} />
                       {new Date(post.date).toLocaleDateString()}
@@ -166,7 +166,7 @@ export default function AdminDashboard() {
                 </div>
                 <Link 
                   href={`/admin/blog/${post.id}/edit`}
-                  className="flex items-center gap-2 px-3 py-2 text-muted-foreground hover:text-foreground transition-colors"
+                  className="flex items-center gap-2 px-3 py-2 text-gray-400 hover:text-white transition-colors"
                 >
                   <Edit size={16} />
                   Edit
